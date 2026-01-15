@@ -1363,6 +1363,11 @@
       // Check if we're on localhost (HTTP not supported for dialogs)
       const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
       
+      console.log('🔍 Environment detection:');
+      console.log('  hostname:', location.hostname);
+      console.log('  protocol:', location.protocol);
+      console.log('  isLocalhost:', isLocalhost);
+      
       if (isLocalhost) {
         // For local development: show results in right panel (popup requires HTTPS)
         console.log('⚠️ Localhost detected - showing results in right panel (dialogs require HTTPS)');
@@ -1398,21 +1403,44 @@
         // Production: Open dialog with results
         const dialogUrl = location.origin + location.pathname.replace(/[^/]*$/, '') + 'regression-results-popup.html';
         
-        console.log('Opening dialog at:', dialogUrl);
+        console.log('🌐 PRODUCTION MODE - Opening dialog');
+        console.log('📍 Dialog URL:', dialogUrl);
+        console.log('📍 Current location:', location.href);
+        console.log('📍 Origin:', location.origin);
+        
+        // Check if Office.context.ui is available
+        if (!Office.context.ui) {
+          console.error('❌ Office.context.ui is not available!');
+          showStatus('leftStatus', '❌ Dialog API not available', 'error');
+          return;
+        }
+        
+        console.log('✅ Office.context.ui available, calling displayDialogAsync...');
         
         Office.context.ui.displayDialogAsync(
           dialogUrl,
           { height: 80, width: 90, displayInIframe: false },
           function(result) {
+            console.log('📨 Dialog callback received');
+            console.log('📊 Result status:', result.status);
+            console.log('📊 Result value:', result.value);
+            
             if (result.status === Office.AsyncResultStatus.Failed) {
-              console.error('Failed to open results dialog:', result.error.message);
+              console.error('❌ Failed to open results dialog');
+              console.error('❌ Error code:', result.error.code);
+              console.error('❌ Error message:', result.error.message);
+              console.error('❌ Error details:', result.error);
               showStatus('leftStatus', '❌ Could not open results window. Error: ' + result.error.message, 'error');
             } else {
-              console.log('✅ Results dialog opened');
+              console.log('✅ Results dialog opened successfully!');
+              console.log('✅ Dialog object:', result.value);
               window.regressionDialog = result.value;
+              showStatus('leftStatus', '✅ Results window opened!', 'success');
             }
           }
         );
+        
+        console.log('📤 displayDialogAsync called, waiting for callback...');
       }
     }
 
