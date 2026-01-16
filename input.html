@@ -1,543 +1,2437 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-  <title>Input Panel - StatisticoAnalytics</title>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet"/>
-  <link href="css/main.css" rel="stylesheet"/>
-  
-  <!-- Office.js -->
-  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js" type="text/javascript"></script>
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mixed Regression Model (ANCOVA) — Input Panel</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <style>
+    :root{
+      --surface-0: #0c1624;
+      --surface-1: #1a1f2e;
+      --surface-2: #242938;
+      --border: #2d3748;
+      --accent-1: rgb(255,165,120);
+      --accent-2: rgb(120,200,255);
+      --accent-3: rgb(152,195,121);
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255,255,255,0.8);
+      --text-muted: rgba(255,255,255,0.6);
+      --panel-radius: 10px;
+      --panel-shadow: 0px 4px 20px rgba(0, 0, 0, 0.4);
+      --pad:10px;
+    }
+    *{ box-sizing:border-box }
+    html,body{height:100%;margin:0;padding:0}
+    body{background:var(--surface-0);color:var(--text-primary);font:14px/1.45 'Segoe UI',Arial,sans-serif}
+    
+    .wrap{ 
+      display:flex; 
+      justify-content:center; 
+      padding:8px;
+      height:100vh;
+    }
+    
+    .card{
+      width:min(1200px, 100%);
+      background:var(--surface-1);
+      border-radius:var(--panel-radius);
+      box-shadow:var(--panel-shadow);
+      border: 1px solid var(--border);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      height:100%;
+    }
+    
+    .card-head{ 
+      background: transparent; 
+      color:var(--accent-1); 
+      padding:10px 14px; 
+      font-weight:600; 
+      font-size:1.2rem; 
+      letter-spacing:.3px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink:0;
+    }
+    
+    .card-body{ 
+      padding:var(--pad); 
+      flex:1;
+      overflow:hidden;
+      display: flex; 
+      flex-direction: column;
+    }
+    
+    .divider{ height:1px; background:var(--border); margin:8px 0; flex-shrink:0 }
+    
+    /* Three-Panel Layout */
+    .split-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+      min-height: 0;
+    }
+    
+    /* Panel 1: Range Selection - Fixed height */
+    .range-panel {
+      flex: 0 0 auto;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px;
+    }
+    
+    /* Panel 2: Variables List - Takes remaining space */
+    .variables-panel {
+      flex: 1;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px;
+      min-height: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* Panel 3: Model Assignment - Fixed height */
+    .model-panel {
+      flex: 0 0 200px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .model-panel .tabs {
+      flex-shrink: 0;
+    }
+    
+    .model-panel .tab-panel {
+      flex: 1;
+      min-height: 0;
+    }
+    
+    /* Fields */
+    input[type=text], select{
+      width:100%; 
+      background:var(--surface-0); 
+      color:var(--text-primary);
+      border:1px solid var(--border); 
+      border-radius:6px; 
+      padding:6px 10px; 
+      min-height:32px;
+      transition: border-color 0.3s ease;
+      font-size: 13px;
+    }
+    input[type=text]:focus, select:focus{
+      outline:none; 
+      border-color:var(--accent-1); 
+      box-shadow:0 0 0 2px rgba(255,165,120,0.2);
+    }
+    
+    .btn{ 
+      background:linear-gradient(135deg, var(--accent-1), #e67e22); 
+      border:0; 
+      border-radius:6px; 
+      color:var(--surface-0); 
+      padding:6px 12px; 
+      font-weight:600; 
+      cursor:pointer; 
+      min-height:32px; 
+      transition:all 0.3s ease;
+      font-size: 12px;
+    }
+    .btn:hover{ 
+      transform:translateY(-1px); 
+      box-shadow:0 4px 12px rgba(255,165,120,0.3); 
+    }
+    .btn.alt{ 
+      background:var(--surface-2); 
+      color:var(--text-primary); 
+      border:1px solid var(--border); 
+    }
+    .btn.alt:hover{ 
+      background:var(--surface-0); 
+      border-color:var(--accent-1); 
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    /* Variables Table */
+    .variables-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      table-layout: fixed;
+    }
+    
+    .variables-table thead {
+      background: var(--surface-0);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    
+    .variables-table th {
+      padding: 4px 8px !important;
+      text-align: left;
+      color: var(--text-secondary);
+      font-weight: 700;
+      border-bottom: 2px solid var(--border);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      line-height: 1.2 !important;
+    }
+    
+    .variables-table th.center {
+      text-align: center;
+    }
+    
+    .variables-table tbody tr {
+      cursor: grab;
+      transition: all 0.2s ease;
+      user-select: none;
+      height: auto !important;
+    }
+    
+    .variables-table tbody tr:hover:not(.variable-row-disabled) {
+      background: var(--surface-1);
+      transform: scale(1.01);
+    }
+    
+    .variables-table tbody tr:active:not(.variable-row-disabled) {
+      cursor: grabbing;
+    }
+    
+    .variables-table tbody tr.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+    
+    .variables-table tbody tr.variable-row-disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    
+    .variables-table tbody tr.variable-row-disabled:hover {
+      background: transparent;
+      transform: none;
+    }
+    
+    .variables-table td {
+      padding: 4px 8px !important;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
+      line-height: 1.2 !important;
+    }
+    
+    .variables-table td.var-name {
+      font-weight: 600;
+      font-size: 13px;
+    }
+    
+    .variables-table td.center {
+      text-align: center;
+      font-weight: 600;
+    }
+    
+    .variables-table td.numeric-col {
+      color: var(--accent-2);
+    }
+    
+    .variables-table td.string-col {
+      color: var(--accent-3);
+    }
+    
+    .variables-table td.missing-col {
+      color: var(--text-muted);
+    }
+    
+    .variables-table .grip-icon {
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+    
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 6px;
+      background: var(--surface-0);
+      border-bottom: 2px solid var(--border);
+      flex-shrink:0;
+      padding: 6px;
+    }
+    
+    .tabs button {
+      flex: 1;
+      background: var(--surface-1);
+      color: var(--text-secondary);
+
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    
+    .tabs button:hover {
+      background: var(--surface-2);
+      color: var(--text-primary);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .tabs button.active {
+      background: var(--surface-2);
+      color: var(--text-primary);
+      border-width: 2px;
+    }
+    
+    .tabs button.y-tab.active { 
+      background: rgba(255, 165, 120, 0.2);
+      border-color: var(--accent-1);
+      color: var(--accent-1); 
+      box-shadow: 0 0 0 2px rgba(255, 165, 120, 0.3);
+    }
+    .tabs button.xn-tab.active { 
+      background: rgba(79, 195, 247, 0.2);
+      border-color: var(--accent-2);
+      color: var(--accent-2); 
+      box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.3);
+    }
+    .tabs button.xc-tab.active { 
+      background: rgba(129, 199, 132, 0.2);
+      border-color: var(--accent-3);
+      color: var(--accent-3); 
+      box-shadow: 0 0 0 2px rgba(129, 199, 132, 0.3);
+    }
+    
+    .tabs button span {
+      font-size: 13px;
+      font-weight: 700;
+    }
+    
+    /* Tab Content */
+    .tab-panel {
+      display: none;
+      flex: 1;
+      min-height: 0;
+      padding: 6px;
+      overflow-y: auto;
+    }
+    
+    .tab-panel.active {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    #panelY {
+      background: rgba(255, 165, 120, 0.05);
+    }
+    
+    #panelXn {
+      background: rgba(79, 195, 247, 0.05);
+    }
+    
+    #panelXc {
+      background: rgba(129, 199, 132, 0.05);
+    }
+    
+    .drop-zone {
+      background: var(--surface-0);
+      border: 2px dashed var(--border);
+      border-radius: 6px;
+      padding: 6px;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+    
+    .drop-zone.y-zone {
+      background: rgba(255, 165, 120, 0.08);
+      border-color: rgba(255, 165, 120, 0.4);
+    }
+    
+    .drop-zone.xn-zone {
+      background: rgba(79, 195, 247, 0.08);
+      border-color: rgba(79, 195, 247, 0.4);
+    }
+    
+    .drop-zone.xc-zone {
+      background: rgba(129, 199, 132, 0.08);
+      border-color: rgba(129, 199, 132, 0.4);
+    }
+    
+    .drop-zone.drag-over {
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.2);
+    }
+    
+    .drop-zone.y-zone.drag-over {
+      border-color: var(--accent-1);
+      background: rgba(255,165,120,0.2);
+      box-shadow: 0 0 0 3px rgba(255,165,120,0.3);
+    }
+    
+    .drop-zone.xn-zone.drag-over {
+      border-color: var(--accent-2);
+      background: rgba(79,195,247,0.2);
+      box-shadow: 0 0 0 3px rgba(79,195,247,0.3);
+    }
+    
+    .drop-zone.xc-zone.drag-over {
+      border-color: var(--accent-3);
+      background: rgba(129,199,132,0.2);
+      box-shadow: 0 0 0 3px rgba(129,199,132,0.3);
+    }
+    
+    .drop-zone-info {
+      color: var(--text-primary);
+      font-size: 10px;
+      text-align: center;
+      padding: 4px 8px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+      margin-bottom: 4px;
+      flex-shrink: 0;
+    }
+    
+    .y-zone .drop-zone-info {
+      background: rgba(255, 165, 120, 0.25);
+      color: #fff;
+    }
+    
+    .xn-zone .drop-zone-info {
+      background: rgba(79, 195, 247, 0.25);
+      color: #fff;
+    }
+    
+    .xc-zone .drop-zone-info {
+      background: rgba(129, 199, 132, 0.25);
+      color: #fff;
+    }
+    
+    .drop-zone-placeholder {
+      color: var(--text-secondary);
+      font-style: italic;
+      font-size: 11px;
+      text-align: center;
+      padding: 12px 8px;
+      opacity: 0.7;
+    }
+    
+    .y-zone .drop-zone-placeholder {
+      color: rgba(255, 165, 120, 0.6);
+    }
+    
+    .xn-zone .drop-zone-placeholder {
+      color: rgba(79, 195, 247, 0.6);
+    }
+    
+    .xc-zone .drop-zone-placeholder {
+      color: rgba(129, 199, 132, 0.6);
+    }
+    
+    /* Toast Notifications */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 400px;
+    }
+    
+    .toast {
+      background: #1a1f2e;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      animation: slideIn 0.3s ease;
+      min-width: 300px;
+      backdrop-filter: blur(10px);
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    .toast.toast-success {
+      border-color: var(--accent-2);
+      background: linear-gradient(135deg, #1a2a3a, #1a3a3a);
+      border-width: 2px;
+    }
+    
+    .toast.toast-error {
+      border-color: #ff6b6b;
+      background: linear-gradient(135deg, #2a1a1a, #3a1a1a);
+      border-width: 2px;
+    }
+    
+    .toast.toast-warning {
+      border-color: #ffa500;
+      background: linear-gradient(135deg, #2a2a1a, #3a2a1a);
+      border-width: 2px;
+    }
+    
+    .toast.toast-info {
+      border-color: var(--accent-3);
+      background: linear-gradient(135deg, #1a2a1a, #1a3a2a);
+      border-width: 2px;
+    }
+    
+    .toast-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    
+    .toast-success .toast-icon { color: var(--accent-2); }
+    .toast-error .toast-icon { color: #ff6b6b; }
+    .toast-warning .toast-icon { color: #ffa500; }
+    .toast-info .toast-icon { color: var(--accent-3); }
+    
+    .toast-content {
+      flex: 1;
+    }
+    
+    .toast-title {
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+    
+    .toast-message {
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    
+    .toast-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 18px;
+      padding: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+    
+    .toast-close:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+    }
+    
+    /* Category Modal */
+    .category-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      backdrop-filter: blur(4px);
+    }
+    
+    .category-modal-overlay.active {
+      display: flex;
+    }
+    
+    .category-modal {
+      background: var(--surface-0);
+      border: 2px solid var(--accent-3);
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+    
+    .category-modal-header {
+      background: rgba(129, 199, 132, 0.2);
+      border-bottom: 2px solid var(--accent-3);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .category-modal-header h3 {
+      margin: 0;
+      color: var(--accent-3);
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .category-modal-body {
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    
+    .category-info {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .category-info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+    
+    .category-info-value {
+      color: var(--accent-3);
+      font-weight: 700;
+    }
+    
+    .category-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    
+    .category-table thead {
+      background: var(--surface-1);
+      position: sticky;
+      top: 0;
+    }
+    
+    .category-table th {
+      padding: 8px;
+      text-align: left;
+      color: var(--text-secondary);
+      font-weight: 700;
+      border-bottom: 2px solid var(--border);
+      font-size: 12px;
+    }
+    
+    .category-table th:last-child {
+      text-align: center;
+    }
+    
+    .category-table tbody tr {
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .category-table tbody tr:hover {
+      background: var(--surface-1);
+    }
+    
+    .category-table td {
+      padding: 8px;
+      color: var(--text-primary);
+    }
+    
+    .category-table td:last-child {
+      text-align: center;
+      font-weight: 700;
+      color: var(--accent-3);
+    }
+    
+    .category-modal-footer {
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    
+    .dropped-variable {
+      background: var(--surface-2);
+      padding: 4px 6px !important;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+      font-size: 11px;
+      flex-shrink:0;
+      line-height: 1.2 !important;
+      min-height: auto !important;
+    }
+    
+    .dropped-variable:hover {
+      background: var(--surface-1);
+      border-color: var(--accent-1);
+    }
+    
+    .dropped-variable .var-name {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      line-height: 1.2 !important;
+    }
+    
+    .dropped-variable .remove-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 2px 4px !important;
+      border-radius: 3px;
+      transition: all 0.2s ease;
+      font-size: 12px;
+      line-height: 1 !important;
+    }
+    
+    .dropped-variable .remove-btn:hover {
+      background: rgba(255,107,107,0.2);
+      color: #ff6b6b;
+    }
+    
+    .y-zone .dropped-variable { border-left: 3px solid var(--accent-1); }
+    .xn-zone .dropped-variable { border-left: 3px solid var(--accent-2); }
+    .xc-zone .dropped-variable { border-left: 3px solid var(--accent-3); }
+    
+    /* Action buttons */
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      justify-content: flex-end;
+      flex-shrink:0;
+    }
+    
+    /* Responsive */
+    @media (max-width: 920px){
+      .split-container {
+        gap:8px;
+      }
+    }
+    
+    @media (max-width: 740px){
+      .card{
+        width: 100%;
+      }
+      .btn {
+        font-size: 11px;
+        padding: 5px 10px;
+      }
+      .top-section {
+        flex: 0 0 50%;
+      }
+      .bottom-section {
+        flex: 0 0 calc(50% - 8px);
+      }
+      .tabs button {
+        font-size: 11px;
+        padding: 6px 8px;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="wrap">
     <section class="card" role="main">
       <div class="card-head">
-        <span><i class="fa-solid fa-sliders"></i> Regression Input Panel</span>
-        <button onclick="showHelp()" style="background: none; border: none; color: var(--accent-1); cursor: pointer; font-size: 1.2rem;">
-          <i class="fa-solid fa-circle-question"></i>
+        <span><i class="fa-solid fa-chart-line"></i> Multiple Regression (ANCOVA)</span>
+        <button id="btnHelp" class="btn alt" style="
+          width: 32px;
+          height: 32px;
+          padding: 0;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height:32px;
+        " title="Help & Documentation">
+          <i class="fa-solid fa-question"></i>
         </button>
       </div>
+      
+      <div class="card-body">
+        <div class="split-container">
+          
+          <!-- PANEL 1: RANGE SELECTION -->
+          <div class="range-panel">
+            <div style="background: rgba(120, 200, 255, 0.1); border: 1px solid var(--accent-2); border-radius: 6px; padding: 8px;">
+              <div id="namedRangesCount" style="color: var(--text-muted); font-size: 0.7rem; margin-bottom: 4px; text-align: center;">
+                <i class="fa-solid fa-book"></i> Loading named ranges...
+              </div>
+              <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
+                <select id="ddlNamedRanges" style="flex: 1; font-size: 13px; padding: 6px 10px;">
+                  <option value="">Select a Named Range...</option>
+                </select>
+                <button id="btnClearAll" class="btn alt" style="padding: 6px 10px; white-space: nowrap; background: linear-gradient(135deg, #ff6b6b, #ee5a6f);" title="Clear all and reset">
+                  <i class="fa-solid fa-trash-can"></i> Clear All
+                </button>
+              </div>
+              <div style="text-align: center; color: var(--text-muted); font-size: 0.65rem; margin-bottom: 6px;">- OR -</div>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <input type="text" id="tbRange" placeholder="Type range and press Enter, or click Pick..." style="flex: 1; font-size: 13px; padding: 6px 10px;" />
+                <button id="btnPick" class="btn" style="background: linear-gradient(135deg, var(--accent-2), #4CAF50); font-weight: 600; padding: 6px 10px; white-space: nowrap;">📗 Pick Range</button>
+              </div>
+              <div style="color: var(--text-muted); font-size: 0.7rem; margin-top: 4px;">
+                💡 Range should include headers in first row • Press Enter to load
+              </div>
+            </div>
+          </div>
+          
+          <!-- PANEL 2: VARIABLES LIST -->
+          <div class="variables-panel">
+            <div style="background: var(--surface-0); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; flex-shrink:0;">
+              <h5 style="color: var(--accent-1); margin: 0 0 4px 0; font-size: 0.75em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Available Variables</h5>
+            </div>
+            
+            <div id="variablesListBox" style="
+              border: 2px solid var(--accent-1);
+              border-radius: 6px;
+              background: var(--surface-2);
+              flex:1;
+              min-height:0;
+              overflow-y: auto;
+              overflow-x: hidden;
+              box-shadow: 0 2px 8px rgba(255, 165, 120, 0.2);
+            ">
+              <div style="color: var(--text-muted); font-style: italic; font-size: 12px; text-align: center; padding: 20px 10px;">
+                No data loaded yet. Select a range above.
+              </div>
+            </div>
+          </div>
+          
+          <!-- PANEL 3: MODEL ASSIGNMENT -->
+          <div class="model-panel">
+            
+            <!-- Regression Model Header -->
+            <div style="background: var(--surface-0); padding: 8px 12px; border-bottom: 2px solid var(--border); flex-shrink: 0;">
+              <h3 style="margin: 0; color: var(--accent-1); font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                <i class="fa-solid fa-chart-line"></i> Model
+              </h3>
+            </div>
+              
+              <!-- Tabs -->
+              <div class="tabs">
+                <button class="y-tab active" data-tab="y">
+                  <span id="badgeY">Y (Response)</span>
+                </button>
+                <button class="xn-tab" data-tab="xn">
+                  <span id="badgeXn">X (numeric)</span>
+                </button>
+                <button class="xc-tab" data-tab="xc">
+                  <span id="badgeXc">X (Categ.)</span>
+                </button>
+              </div>
+              
+              <!-- Tab Panels -->
+              
+              <!-- Y Panel -->
+              <div class="tab-panel active" id="panelY">
 
-      <div class="card-body" style="overflow-y: auto; max-height: calc(100vh - 100px);">
+                <div class="drop-zone y-zone" data-zone="y" id="zoneY">
+                  <div class="drop-zone-placeholder">
+                    Drag a numeric variable here
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Xn Panel -->
+              <div class="tab-panel" id="panelXn">
+
+                <div class="drop-zone xn-zone" data-zone="xn" id="zoneXn">
+                  <div class="drop-zone-placeholder">
+                    Drag numeric variables here
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Xc Panel -->
+              <div class="tab-panel" id="panelXc">
+
+                <div class="drop-zone xc-zone" data-zone="xc" id="zoneXc">
+                  <div class="drop-zone-placeholder">
+                    Drag categorical variables here
+                  </div>
+                </div>
+              </div>
+              
+          </div>
+          
+          <!-- Observation Monitor -->
+          <div id="obsMonitor" style="
+            background: var(--surface-0);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin: 8px 12px 0 12px;
+            display: none;
+            flex-shrink: 0;
+          ">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-database" style="color: var(--accent-2); font-size: 16px;"></i>
+                <span style="color: var(--text-secondary); font-weight: 600; font-size: 12px;">Maximum Usable Cases:</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span id="obsCount" style="color: var(--accent-2); font-weight: 700; font-size: 18px;">0</span>
+                <span id="obsPct" style="color: var(--text-muted); font-size: 11px;">(0%)</span>
+              </div>
+            </div>
+
+          </div>
+          
+        </div>
         
-        <!-- Data Selection -->
-        <div class="input-section">
-          <div class="section-header">
-            <i class="fa-solid fa-table"></i> Data Selection
-          </div>
-          
-          <div class="input-field">
-            <label>Data Range (Include Headers):</label>
-            <div class="range-input-group">
-              <input type="text" id="dataRange" placeholder="e.g., A1:E100" />
-              <button onclick="selectDataRange()" class="range-btn">
-                <i class="fa-solid fa-hand-pointer"></i> Select
-              </button>
-            </div>
-            <small class="help-text">Select your data including column headers in the first row</small>
-          </div>
-        </div>
-
-        <!-- Variable Assignment -->
-        <div class="input-section">
-          <div class="section-header">
-            <i class="fa-solid fa-tags"></i> Variable Assignment
-          </div>
-          
-          <div class="input-field">
-            <label>Dependent Variable (Y):</label>
-            <select id="yVariable" class="variable-select">
-              <option value="">-- Select Y Variable --</option>
-            </select>
-          </div>
-
-          <div class="input-field">
-            <label>Independent Variables (X - Numeric):</label>
-            <div id="numericVariables" class="checkbox-group">
-              <p class="placeholder-text">Load data first to see available variables</p>
-            </div>
-          </div>
-
-          <div class="input-field">
-            <label>Categorical Variables (Optional):</label>
-            <div id="categoricalVariables" class="checkbox-group">
-              <p class="placeholder-text">Load data first to see available variables</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Model Options -->
-        <div class="input-section">
-          <div class="section-header">
-            <i class="fa-solid fa-gear"></i> Model Options
-          </div>
-          
-          <div class="input-field">
-            <label class="checkbox-label">
-              <input type="checkbox" id="includeIntercept" checked />
-              <span>Include Intercept (β₀)</span>
-            </label>
-          </div>
-
-          <div class="input-field">
-            <label>Confidence Level:</label>
-            <select id="confidenceLevel" class="option-select">
-              <option value="0.90">90%</option>
-              <option value="0.95" selected>95%</option>
-              <option value="0.99">99%</option>
-            </select>
-          </div>
-
-          <div class="input-field">
-            <label class="checkbox-label">
-              <input type="checkbox" id="includeVIF" checked />
-              <span>Calculate VIF (Multicollinearity)</span>
-            </label>
-          </div>
-
-          <div class="input-field">
-            <label class="checkbox-label">
-              <input type="checkbox" id="includeDiagnostics" />
-              <span>Include Advanced Diagnostics</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Data Preview -->
-        <div class="input-section" id="previewSection" style="display: none;">
-          <div class="section-header">
-            <i class="fa-solid fa-eye"></i> Data Preview
-          </div>
-          
-          <div style="background: var(--surface-2); padding: 10px; border-radius: 6px; margin-top: 10px;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem;">
-              <div>
-                <strong>Rows:</strong> <span id="previewRows">0</span>
-              </div>
-              <div>
-                <strong>Columns:</strong> <span id="previewCols">0</span>
-              </div>
-              <div>
-                <strong>Variables:</strong> <span id="previewVars">0</span>
-              </div>
-              <div>
-                <strong>Missing:</strong> <span id="previewMissing">0</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="button-group">
-          <button onclick="loadData()" class="btn btn-secondary">
-            <i class="fa-solid fa-download"></i> Load Data
+        <div class="divider"></div>
+        
+        <!-- Action Buttons: All on one row -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button id="btnClear" class="btn alt">
+            <i class="fa-solid fa-eraser"></i> Clear
           </button>
-          
-          <button onclick="runRegression()" class="btn btn-primary" id="runBtn" disabled>
+          <button id="btnValidate" class="btn alt">
+            <i class="fa-solid fa-check-circle"></i> Validate
+          </button>
+          <div style="display: flex; align-items: center; gap: 8px; background: var(--surface-0); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; flex: 1;">
+            <input type="checkbox" id="chkIncludeIntercept" checked style="cursor: pointer; width: 18px; height: 18px;" />
+            <label for="chkIncludeIntercept" style="cursor: pointer; color: var(--text-secondary); font-weight: 600; font-size: 14px; margin: 0; white-space: nowrap;">
+              <i class="fa-solid fa-plus"></i> Intercept
+            </label>
+          </div>
+          <button id="btnRunAnalysis" class="btn" disabled style="margin: 0; white-space: nowrap;">
             <i class="fa-solid fa-play"></i> Run Regression
           </button>
         </div>
-
-        <!-- Status Messages -->
-        <div id="statusMessage" class="status-message" style="display: none;"></div>
-
+        
       </div>
     </section>
+    
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <!-- Category Modal -->
+    <div class="category-modal-overlay" id="categoryModal">
+      <div class="category-modal">
+        <div class="category-modal-header">
+          <h3>
+            <i class="fa-solid fa-tags"></i>
+            <span id="categoryModalTitle">Category Distribution</span>
+          </h3>
+        </div>
+        <div class="category-modal-body">
+          <div class="category-info">
+            <div class="category-info-row">
+              <span>Variable:</span>
+              <span class="category-info-value" id="categoryVarName">—</span>
+            </div>
+            <div class="category-info-row">
+              <span>Total Observations:</span>
+              <span class="category-info-value" id="categoryTotalObs">—</span>
+            </div>
+            <div class="category-info-row">
+              <span>Included Observations:</span>
+              <span class="category-info-value" id="categoryIncludedObs" style="color: var(--accent-2);">—</span>
+            </div>
+            <div class="category-info-row">
+              <span>Selected Categories:</span>
+              <span class="category-info-value" id="categorySelectedCount">—</span>
+            </div>
+            <div class="category-info-row">
+              <span>Total Categories:</span>
+              <span class="category-info-value" id="categoryUniqueCount">—</span>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="color: var(--text-secondary); font-size: 12px; font-weight: 600;">Select Categories to Include:</span>
+            <div style="display: flex; gap: 8px;">
+              <button id="btnSelectAllCat" class="btn alt" style="font-size: 11px; padding: 4px 8px;">
+                <i class="fa-solid fa-check-square"></i> Select All
+              </button>
+              <button id="btnDeselectAllCat" class="btn alt" style="font-size: 11px; padding: 4px 8px;">
+                <i class="fa-solid fa-square"></i> Deselect All
+              </button>
+            </div>
+          </div>
+          <table class="category-table">
+            <thead>
+              <tr>
+                <th style="width: 40px; text-align: center;">Include</th>
+                <th>Category</th>
+                <th style="text-align: center;">Frequency</th>
+              </tr>
+            </thead>
+            <tbody id="categoryTableBody">
+            </tbody>
+          </table>
+        </div>
+        <div class="category-modal-footer">
+          <button id="btnCategoryCancel" class="btn alt">
+            <i class="fa-solid fa-times"></i> Cancel
+          </button>
+          <button id="btnCategoryConfirm" class="btn" style="background: var(--accent-3);">
+            <i class="fa-solid fa-check"></i> Assign to Xc
+          </button>
+        </div>
+      </div>
+    </div>
+    
   </div>
 
-  <style>
-    .input-section {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 20px;
-    }
-
-    .section-header {
-      color: var(--accent-1);
-      font-weight: 700;
-      font-size: 1rem;
-      margin-bottom: 15px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .section-header i {
-      margin-right: 8px;
-    }
-
-    .input-field {
-      margin-bottom: 15px;
-    }
-
-    .input-field label {
-      display: block;
-      color: var(--text-secondary);
-      font-weight: 600;
-      margin-bottom: 6px;
-      font-size: 0.9rem;
-    }
-
-    .input-field input[type="text"],
-    .input-field select {
-      width: 100%;
-      padding: 10px;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text-primary);
-      font-size: 14px;
-    }
-
-    .input-field input[type="text"]:focus,
-    .input-field select:focus {
-      outline: none;
-      border-color: var(--accent-1);
-      box-shadow: 0 0 0 2px rgba(255, 165, 120, 0.2);
-    }
-
-    .range-input-group {
-      display: flex;
-      gap: 10px;
-    }
-
-    .range-input-group input {
-      flex: 1;
-    }
-
-    .range-btn {
-      padding: 10px 15px;
-      background: var(--accent-1);
-      border: none;
-      border-radius: 6px;
-      color: #000;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      white-space: nowrap;
-    }
-
-    .range-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(255, 165, 120, 0.4);
-    }
-
-    .range-btn i {
-      margin-right: 6px;
-    }
-
-    .checkbox-group {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 12px;
-      max-height: 200px;
-      overflow-y: auto;
-    }
-
-    .checkbox-label {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-      padding: 8px;
-      border-radius: 4px;
-      transition: background 0.2s;
-    }
-
-    .checkbox-label:hover {
-      background: rgba(255, 165, 120, 0.1);
-    }
-
-    .checkbox-label input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-    }
-
-    .placeholder-text {
-      color: var(--text-muted);
-      font-style: italic;
-      margin: 0;
-      text-align: center;
-      padding: 20px;
-    }
-
-    .help-text {
-      display: block;
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      margin-top: 4px;
-    }
-
-    .button-group {
-      display: flex;
-      gap: 12px;
-      margin: 25px 0;
-    }
-
-    .btn {
-      flex: 1;
-      padding: 12px 20px;
-      border: none;
-      border-radius: 6px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, var(--accent-1), rgba(255, 165, 120, 0.8));
-      color: #000;
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(255, 165, 120, 0.4);
-    }
-
-    .btn-primary:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    .btn-secondary {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      color: var(--text-primary);
-    }
-
-    .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: var(--accent-1);
-    }
-
-    .status-message {
-      padding: 12px;
-      border-radius: 6px;
-      margin-top: 15px;
-      font-size: 0.9rem;
-    }
-
-    .status-message.success {
-      background: rgba(46, 204, 113, 0.2);
-      border-left: 4px solid #2ecc71;
-      color: #2ecc71;
-    }
-
-    .status-message.error {
-      background: rgba(231, 76, 60, 0.2);
-      border-left: 4px solid #e74c3c;
-      color: #e74c3c;
-    }
-
-    .status-message.info {
-      background: rgba(120, 200, 255, 0.2);
-      border-left: 4px solid var(--accent-2);
-      color: var(--accent-2);
-    }
-  </style>
-
   <script>
-    console.log('✅ Input Panel loaded');
+    // ============================================================================
+    // GLOBAL STATE
+    // ============================================================================
+    var STATE = {
+      variables: [],
+      data: {},
+      variableStats: {},  // Stores variable metadata from Excel
+      assignments: {
+        y: null,
+        xn: [],
+        xc: []
+      }
+    };
     
-    let dataLoaded = false;
-    let availableColumns = [];
+    // ============================================================================
+    // UTILITY FUNCTIONS
+    // ============================================================================
+    function qs(id){ return document.getElementById(id); }
     
-    // Initialize Office.js
-    Office.onReady((info) => {
-      if (info.host === Office.HostType.Excel) {
-        console.log('✅ Office.js initialized in Excel');
-        showStatus('Ready to load data from Excel', 'info');
+    // Toast Notification System
+    function showToast(message, type, duration) {
+      type = type || 'info'; // success, error, warning, info
+      duration = duration || 4000;
+      
+      var container = qs('toastContainer');
+      var toast = document.createElement('div');
+      toast.className = 'toast toast-' + type;
+      
+      var icon = '';
+      var title = '';
+      switch(type) {
+        case 'success':
+          icon = 'fa-check-circle';
+          title = 'Success';
+          break;
+        case 'error':
+          icon = 'fa-exclamation-circle';
+          title = 'Error';
+          break;
+        case 'warning':
+          icon = 'fa-exclamation-triangle';
+          title = 'Warning';
+          break;
+        case 'info':
+          icon = 'fa-info-circle';
+          title = 'Info';
+          break;
+      }
+      
+      toast.innerHTML = 
+        '<div class="toast-icon"><i class="fa-solid ' + icon + '"></i></div>' +
+        '<div class="toast-content">' +
+          '<div class="toast-title">' + title + '</div>' +
+          '<div class="toast-message">' + message + '</div>' +
+        '</div>' +
+        '<button class="toast-close"><i class="fa-solid fa-times"></i></button>';
+      
+      container.appendChild(toast);
+      
+      // Close button handler
+      toast.querySelector('.toast-close').addEventListener('click', function() {
+        removeToast(toast);
+      });
+      
+      // Auto-remove after duration
+      setTimeout(function() {
+        removeToast(toast);
+      }, duration);
+    }
+    
+    function removeToast(toast) {
+      toast.style.animation = 'slideIn 0.3s ease reverse';
+      setTimeout(function() {
+        if (toast.parentNode) {
+          toast.parentNode.removeChild(toast);
+        }
+      }, 300);
+    }
+    
+    function sendToHost(cmd, data) {
+      try {
+        if (typeof vbHost !== 'undefined' && vbHost && typeof vbHost.RaiseMessageEvent === 'function') {
+          var dataStr = typeof data === 'string' ? data : JSON.stringify(data || {});
+          vbHost.RaiseMessageEvent(cmd, dataStr);
+          console.log('📤 Sent to host:', cmd, dataStr.substring(0, 100));
+        } else {
+          console.warn('⚠️ vbHost not available');
+        }
+      } catch(e) {
+        console.error('❌ Error sending to host:', e);
+      }
+    }
+    
+    // ============================================================================
+    // DATA LOADING
+    // ============================================================================
+    
+    window.populateNamedRanges = function(namedRangesJson) {
+      console.log('📗 populateNamedRanges called');
+      try {
+        var namedRanges = typeof namedRangesJson === 'string' ? 
+          JSON.parse(namedRangesJson) : namedRangesJson;
+        
+        var ddl = qs('ddlNamedRanges');
+        var countDisplay = qs('namedRangesCount');
+        
+        ddl.innerHTML = '<option value="">Select a Named Range...</option>';
+        
+        if (Array.isArray(namedRanges) && namedRanges.length > 0) {
+          namedRanges.forEach(function(name) {
+            var option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            ddl.appendChild(option);
+          });
+          
+          countDisplay.innerHTML = '<i class="fa-solid fa-book"></i> ' + 
+            namedRanges.length + ' named ranges' + (namedRanges.length === 1 ? '' : 's');
+          countDisplay.style.color = 'var(--accent-1)';
+        } else {
+          countDisplay.innerHTML = '<i class="fa-solid fa-book"></i> No named ranges';
+          countDisplay.style.color = 'var(--text-muted)';
+        }
+      } catch(e) {
+        console.error('❌ Error populating named ranges:', e);
+      }
+    };
+    
+    // Function called by VBA to load data (multi-column format like InputXL)
+    window.populateVariableSelectionTable = function(varStats) {
+      console.log('═══════════════════════════════════════════════════════');
+      console.log('📊 populateVariableSelectionTable CALLED');
+      console.log('📊 varStats:', varStats);
+      
+      try {
+        // varStats format: { "VarName": { count: 100, excelColumn: 3, rangeAddress: "C2:C21" }, ... }
+        var headers = [];
+        for (var varName in varStats) {
+          if (varStats.hasOwnProperty(varName)) {
+            headers.push(varName);
+          }
+        }
+        
+        console.log('✅ Found ' + headers.length + ' variables:', headers);
+        
+        // Store variable stats for later use
+        STATE.variableStats = varStats;
+        
+        // Build variable list
+        STATE.variables = [];
+        for (var i = 0; i < headers.length; i++) {
+          var varName = headers[i];
+          var stats = varStats[varName];
+          
+          // Try to detect if numeric or categorical based on data
+          // For now, assume all are available for assignment
+          STATE.variables.push({
+            name: varName,
+            type: 'unknown', // Will be determined when user tries to drop
+            validCount: stats.count || 0,
+            numeric: stats.numeric || 0,
+            string: stats.string || 0,
+            missing: stats.missing || 0,
+            categories: stats.categories || [],
+            rangeAddress: stats.rangeAddress || ''
+          });
+        }
+        
+        STATE.data = {}; // Will be populated on demand
+        STATE.assignments = { y: null, xn: [], xc: [] };
+        
+        renderVariables();
+        clearAssignments();
+        
+        console.log('✅ Variables loaded successfully');
+      } catch(e) {
+        console.error('❌ Error in populateVariableSelectionTable:', e);
+        showToast('Error loading variables: ' + e.message, 'error');
+      }
+    };
+    
+    window.loadRegressionData = function(jsonString) {
+      console.log('📥 loadRegressionData called');
+      try {
+        var data = JSON.parse(jsonString);
+        console.log('✅ Data loaded:', data);
+        
+        if (!data || !data.headers || !data.rows) {
+          showToast('Invalid data format', 'error');
+          return;
+        }
+        
+        processLoadedData(data);
+        
+      } catch(e) {
+        console.error('❌ Error loading data:', e);
+        showToast('Error loading data: ' + e.message, 'error');
+      }
+    };
+    
+    function processLoadedData(data) {
+      console.log('📊 Processing loaded data...');
+      
+      var headers = data.headers;
+      var rows = data.rows;
+      var numRows = rows.length;
+      var numCols = headers.length;
+      
+      STATE.variables = [];
+      STATE.data = {};
+      STATE.assignments = { y: null, xn: [], xc: [] };
+      
+      for (var colIdx = 0; colIdx < numCols; colIdx++) {
+        var header = headers[colIdx];
+        var columnData = [];
+        
+        for (var rowIdx = 0; rowIdx < numRows; rowIdx++) {
+          var value = rows[rowIdx][colIdx];
+          if (value !== null && value !== undefined && value !== '') {
+            columnData.push(value);
+          }
+        }
+        
+        // Detect if column is numeric or categorical and count types
+        var numericCnt = 0, stringCnt = 0;
+        for (var k = 0; k < columnData.length; k++) {
+          var val = columnData[k];
+          if (!isNaN(parseFloat(val)) && isFinite(val)) {
+            numericCnt++;
+          } else {
+            stringCnt++;
+          }
+        }
+        
+        var isNumeric = numericCnt > stringCnt;
+        var missingCnt = numRows - columnData.length;
+        
+        STATE.variables.push({
+          name: header,
+          type: isNumeric ? 'numeric' : 'categorical',
+          validCount: columnData.length,
+          numeric: numericCnt,
+          string: stringCnt,
+          missing: missingCnt
+        });
+        
+        STATE.data[header] = columnData;
+      }
+      
+      console.log('✅ Processed variables:', STATE.variables);
+      renderVariables();
+      clearAssignments();
+    }
+    
+    function detectNumericColumn(data) {
+      if (data.length === 0) return false;
+      
+      var numericCount = 0;
+      var totalCount = 0;
+      
+      for (var i = 0; i < Math.min(data.length, 100); i++) {
+        var val = data[i];
+        if (val !== null && val !== undefined && val !== '') {
+          totalCount++;
+          if (!isNaN(parseFloat(val)) && isFinite(val)) {
+            numericCount++;
+          }
+        }
+      }
+      
+      return totalCount > 0 && (numericCount / totalCount) >= 0.8;
+    }
+    
+    function renderVariables() {
+      var container = qs('variablesListBox');
+      container.innerHTML = '';
+      
+      if (STATE.variables.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-muted); font-style: italic; font-size: 12px; text-align: center; padding: 20px 10px;">No variables loaded</div>';
+        return;
+      }
+      
+      // Build table
+      var table = document.createElement('table');
+      table.className = 'variables-table';
+      
+      // Table header
+      var thead = document.createElement('thead');
+      thead.innerHTML = 
+        '<tr>' +
+          '<th>Variable</th>' +
+          '<th class="center">n Numeric</th>' +
+          '<th class="center">n String</th>' +
+          '<th class="center">n Missing</th>' +
+          '<th style="width: 30px;"></th>' +
+        '</tr>';
+      table.appendChild(thead);
+      
+      // Table body
+      var tbody = document.createElement('tbody');
+      STATE.variables.forEach(function(variable) {
+        var tr = document.createElement('tr');
+        var isAssigned = isVariableAssigned(variable.name);
+        
+        // Set draggable only if not assigned
+        tr.draggable = !isAssigned;
+        tr.dataset.varName = variable.name;
+        tr.dataset.varType = variable.type;
+        
+        // Add disabled class if assigned
+        if (isAssigned) {
+          tr.classList.add('variable-row-disabled');
+          tr.style.opacity = '0.4';
+          tr.style.cursor = 'not-allowed';
+        }
+        
+        var numericCount = variable.numeric || 0;
+        var stringCount = variable.string || 0;
+        var missingCount = variable.missing || 0;
+        var nonMissingCount = numericCount + stringCount;
+        
+        // Determine eligibility
+        var eligibleForY = numericCount >= 5;
+        var eligibleForXn = numericCount >= 5;
+        var eligibleForXc = nonMissingCount >= 5;
+        
+        // Build eligibility badges or assignment indicator
+        var eligibilityHTML = '';
+        if (isAssigned) {
+          // Show where it's assigned
+          var assignedTo = '';
+          if (STATE.assignments.y === variable.name) {
+            assignedTo = '<span style="color: var(--accent-1); font-size: 10px; font-weight: 700;"><i class="fa-solid fa-check-circle"></i> Assigned to Y</span>';
+          } else if (STATE.assignments.xn.indexOf(variable.name) >= 0) {
+            assignedTo = '<span style="color: var(--accent-2); font-size: 10px; font-weight: 700;"><i class="fa-solid fa-check-circle"></i> Assigned to Xn</span>';
+          } else if (STATE.assignments.xc.indexOf(variable.name) >= 0) {
+            assignedTo = '<span style="color: var(--accent-3); font-size: 10px; font-weight: 700;"><i class="fa-solid fa-check-circle"></i> Assigned to Xc</span>';
+          }
+          eligibilityHTML = '<div style="display: flex; gap: 2px; justify-content: center;">' + assignedTo + '</div>';
+        } else {
+          // Show eligibility
+          eligibilityHTML = '<div style="display: flex; gap: 2px; justify-content: center;">';
+          if (eligibleForY) {
+            eligibilityHTML += '<span style="color: var(--accent-1); font-size: 10px; font-weight: 700;" title="Eligible for Y (Response)">Y</span>';
+          }
+          if (eligibleForXn) {
+            eligibilityHTML += '<span style="color: var(--accent-2); font-size: 10px; font-weight: 700;" title="Eligible for Xn (Numeric)">Xn</span>';
+          }
+          if (eligibleForXc) {
+            eligibilityHTML += '<span style="color: var(--accent-3); font-size: 10px; font-weight: 700;" title="Eligible for Xc (Categorical)">Xc</span>';
+          }
+          if (!eligibleForY && !eligibleForXn && !eligibleForXc) {
+            eligibilityHTML += '<span style="color: var(--text-muted); font-size: 10px;">—</span>';
+          }
+          eligibilityHTML += '</div>';
+        }
+        
+        var gripIcon = isAssigned ? '' : '<i class="fa-solid fa-grip-vertical grip-icon"></i>';
+        
+        tr.innerHTML = 
+          '<td class="var-name">' + variable.name + '</td>' +
+          '<td class="center numeric-col">' + numericCount + '</td>' +
+          '<td class="center string-col">' + stringCount + '</td>' +
+          '<td class="center missing-col">' + missingCount + '</td>' +
+          '<td style="text-align: center;">' + gripIcon + '</td>';
+        
+        if (!isAssigned) {
+          tr.addEventListener('dragstart', handleDragStart);
+          tr.addEventListener('dragend', handleDragEnd);
+        }
+        
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      
+      container.appendChild(table);
+    }
+    
+    function loadSampleData() {
+      console.log('🧪 Loading sample data...');
+      
+      var sampleData = {
+        headers: ['Salary', 'Age', 'Experience', 'Education', 'Department', 'Gender', 'Performance', 'Hours_Worked'],
+        rows: [
+          [65000, 28, 3, 'Bachelor', 'Sales', 'M', 85, 42],
+          [72000, 32, 6, 'Master', 'Engineering', 'F', 92, 45],
+          [58000, 25, 2, 'Bachelor', 'Marketing', 'M', 78, 40],
+          [85000, 38, 12, 'PhD', 'Engineering', 'M', 95, 48],
+          [62000, 29, 4, 'Bachelor', 'Sales', 'F', 88, 41],
+          [78000, 35, 9, 'Master', 'Marketing', 'F', 90, 44],
+          [55000, 24, 1, 'Bachelor', 'Sales', 'M', 75, 38],
+          [95000, 42, 15, 'PhD', 'Engineering', 'M', 98, 50],
+          [68000, 30, 5, 'Master', 'Marketing', 'F', 87, 43],
+          [70000, 31, 7, 'Bachelor', 'Engineering', 'M', 89, 42],
+          [60000, 27, 3, 'Bachelor', 'Sales', 'F', 82, 40],
+          [88000, 39, 13, 'Master', 'Engineering', 'M', 94, 47],
+          [63000, 28, 4, 'Bachelor', 'Marketing', 'M', 84, 41],
+          [75000, 34, 8, 'Master', 'Sales', 'F', 91, 44],
+          [58000, 26, 2, 'Bachelor', 'Marketing', 'F', 79, 39]
+        ]
+      };
+      
+      processLoadedData(sampleData);
+      
+      setTimeout(function() {
+        showToast('Sample Data Loaded!<br><br>15 rows × 8 variables<br><br><strong>Numeric:</strong> Salary, Age, Experience, Performance, Hours_Worked<br><strong>Categorical:</strong> Education, Department, Gender<br><br>💡 Drag variables to zones below!', 'success', 6000);
+      }, 200);
+    }
+    
+    // ============================================================================
+    // DRAG & DROP
+    // ============================================================================
+    var draggedElement = null;
+    
+    function handleDragStart(e) {
+      draggedElement = e.target;
+      e.target.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/html', e.target.innerHTML);
+    }
+    
+    function handleDragEnd(e) {
+      e.target.classList.remove('dragging');
+    }
+    
+    function handleDragOver(e) {
+      if (e.preventDefault) {
+        e.preventDefault();
+      }
+      e.dataTransfer.dropEffect = 'move';
+      return false;
+    }
+    
+    function handleDragEnter(e) {
+      var zone = e.target.closest('.drop-zone');
+      if (zone) {
+        zone.classList.add('drag-over');
+      }
+    }
+    
+    function handleDragLeave(e) {
+      var zone = e.target.closest('.drop-zone');
+      if (zone && !zone.contains(e.relatedTarget)) {
+        zone.classList.remove('drag-over');
+      }
+    }
+    
+    function handleDrop(e) {
+      if (e.stopPropagation) {
+        e.stopPropagation();
+      }
+      e.preventDefault();
+      
+      var zone = e.target.closest('.drop-zone');
+      if (!zone || !draggedElement) return false;
+      
+      zone.classList.remove('drag-over');
+      
+      var varName = draggedElement.dataset.varName;
+      var varType = draggedElement.dataset.varType;
+      var zoneType = zone.dataset.zone;
+      
+      // Check if already assigned first
+      if (isVariableAssigned(varName)) {
+        showToast('Variable "' + varName + '" is already assigned to the model.', 'warning');
+        return false;
+      }
+      
+      // Get variable statistics
+      var stats = STATE.variableStats[varName];
+      if (!stats) {
+        showToast('Cannot find statistics for variable "' + varName + '".', 'error');
+        return false;
+      }
+      
+      // Validate minimum data requirements based on zone type
+      var numericCount = stats.numeric || 0;
+      var stringCount = stats.string || 0;
+      var missingCount = stats.missing || 0;
+      var nonMissingCount = numericCount + stringCount;
+      var totalCount = numericCount + stringCount + missingCount;
+      
+      if (zoneType === 'y' || zoneType === 'xn') {
+        // Y and Xn require at least 5 numerical values
+        if (numericCount < 5) {
+          showToast('Variable "' + varName + '" has only ' + numericCount + ' numeric values. ' +
+                (zoneType === 'y' ? 'Response variable' : 'Numeric predictors') + 
+                ' require at least 5 numeric values.', 'error');
+          return false;
+        }
+      } else if (zoneType === 'xc') {
+        // Xc requires at least 5 non-missing values
+        if (nonMissingCount < 5) {
+          showToast('Variable "' + varName + '" has only ' + nonMissingCount + ' non-missing values. ' +
+                'Categorical predictors require at least 5 non-missing values.', 'error');
+          return false;
+        }
+        
+        // Show category distribution modal for Xc variables
+        showCategoryModal(varName, stats);
+        return false; // Stop here - assignment will happen after modal confirmation
+      }
+      
+      // For sample data, type is already set
+      if (varType !== 'unknown') {
+        // Validation
+        if (zoneType === 'y') {
+          if (varType !== 'numeric') {
+            showToast('Response variable (Y) must be numeric.', 'error');
+            return false;
+          }
+          if (STATE.assignments.y !== null) {
+            showToast('Only ONE response variable allowed. Remove the existing variable first.', 'warning');
+            return false;
+          }
+        } else if (zoneType === 'xn') {
+          if (varType !== 'numeric') {
+            showToast('Numeric predictors (Xn) must be numeric variables.', 'error');
+            return false;
+          }
+        } else if (zoneType === 'xc') {
+          if (varType !== 'categorical') {
+            showToast('Categorical predictors (Xc) must be categorical variables.', 'error');
+            return false;
+          }
+        }
+        
+        addVariableToZone(varName, varType, zoneType);
+      } else {
+        // For real Excel data, type is unknown - allow any zone and let user decide
+        // We'll validate when running the analysis
+        
+        if (zoneType === 'y' && STATE.assignments.y !== null) {
+          showToast('Only ONE response variable allowed. Remove the existing variable first.', 'warning');
+          return false;
+        }
+        
+        // Determine type based on zone
+        var assignedType = (zoneType === 'xc') ? 'categorical' : 'numeric';
+        
+        // Update the variable type
+        for (var i = 0; i < STATE.variables.length; i++) {
+          if (STATE.variables[i].name === varName) {
+            STATE.variables[i].type = assignedType;
+            break;
+          }
+        }
+        
+        addVariableToZone(varName, assignedType, zoneType);
+      }
+      
+      return false;
+    }
+    
+    function isVariableAssigned(varName) {
+      return STATE.assignments.y === varName ||
+             STATE.assignments.xn.indexOf(varName) >= 0 ||
+             STATE.assignments.xc.indexOf(varName) >= 0;
+    }
+    
+    function addVariableToZone(varName, varType, zoneType) {
+      if (zoneType === 'y') {
+        STATE.assignments.y = varName;
+      } else if (zoneType === 'xn') {
+        STATE.assignments.xn.push(varName);
+      } else if (zoneType === 'xc') {
+        STATE.assignments.xc.push(varName);
+      }
+      
+      // Force immediate re-render
+      setTimeout(function() {
+        renderVariables(); // Update variables list to show disabled state
+        renderAssignments(); // Update drop zones
+        validateModel();
+      }, 0);
+    }
+    
+    function removeVariableFromZone(varName, zoneType) {
+      if (zoneType === 'y') {
+        STATE.assignments.y = null;
+      } else if (zoneType === 'xn') {
+        var idx = STATE.assignments.xn.indexOf(varName);
+        if (idx >= 0) STATE.assignments.xn.splice(idx, 1);
+      } else if (zoneType === 'xc') {
+        var idx = STATE.assignments.xc.indexOf(varName);
+        if (idx >= 0) STATE.assignments.xc.splice(idx, 1);
+      }
+      
+      renderAssignments();
+      renderVariables(); // Add back to available list
+      validateModel();
+    }
+    
+    function renderAssignments() {
+      // Y zone
+      var zoneY = qs('zoneY');
+      zoneY.innerHTML = '';
+      if (STATE.assignments.y) {
+        zoneY.appendChild(createDroppedVariable(STATE.assignments.y, 'y'));
+        qs('badgeY').textContent = 'Y (Response) • 1';
+      } else {
+        zoneY.innerHTML = '<div class="drop-zone-placeholder">Drag a numeric variable here</div>';
+        qs('badgeY').textContent = 'Y (Response)';
+      }
+      
+      // Xn zone
+      var zoneXn = qs('zoneXn');
+      zoneXn.innerHTML = '';
+      if (STATE.assignments.xn.length > 0) {
+        STATE.assignments.xn.forEach(function(varName) {
+          zoneXn.appendChild(createDroppedVariable(varName, 'xn'));
+        });
+        qs('badgeXn').textContent = 'X (numeric)  x ' + STATE.assignments.xn.length;
+      } else {
+        zoneXn.innerHTML = '<div class="drop-zone-placeholder">Drag numeric variables here</div>';
+        qs('badgeXn').textContent = 'X (numeric)';
+      }
+      
+      // Xc zone
+      var zoneXc = qs('zoneXc');
+      zoneXc.innerHTML = '';
+      if (STATE.assignments.xc.length > 0) {
+        STATE.assignments.xc.forEach(function(varName) {
+          zoneXc.appendChild(createDroppedVariable(varName, 'xc'));
+        });
+        qs('badgeXc').textContent = 'X (Categ)  x ' + STATE.assignments.xc.length;
+      } else {
+        zoneXc.innerHTML = '<div class="drop-zone-placeholder">Drag categorical variables here</div>';
+        qs('badgeXc').textContent = 'X (Categ)';
+      }
+      
+      // Update observation monitor
+      updateObservationMonitor();
+    }
+    
+    function updateObservationMonitor() {
+      var monitor = qs('obsMonitor');
+      
+      // Get all assigned variables
+      var allVars = [];
+      if (STATE.assignments.y) allVars.push(STATE.assignments.y);
+      allVars = allVars.concat(STATE.assignments.xn);
+      allVars = allVars.concat(STATE.assignments.xc);
+      
+      // If no variables assigned, hide monitor
+      if (allVars.length === 0) {
+        monitor.style.display = 'none';
+        return;
+      }
+      
+      // Show monitor
+      monitor.style.display = 'block';
+      
+      // Calculate eligible observations as the MINIMUM valid count across all assigned variables
+      // This gives a conservative estimate of complete cases
+      var eligibleCount = Infinity;
+      var totalRows = 0;
+      
+      // Y variable (if assigned)
+      if (STATE.assignments.y) {
+        var yStats = STATE.variableStats[STATE.assignments.y];
+        if (yStats) {
+          var yValid = yStats.numeric || 0;
+          eligibleCount = Math.min(eligibleCount, yValid);
+          totalRows = (yStats.numeric || 0) + (yStats.string || 0) + (yStats.missing || 0);
+        }
+      }
+      
+      // Xn variables (numeric predictors)
+      for (var i = 0; i < STATE.assignments.xn.length; i++) {
+        var xnStats = STATE.variableStats[STATE.assignments.xn[i]];
+        if (xnStats) {
+          var xnValid = xnStats.numeric || 0;
+          eligibleCount = Math.min(eligibleCount, xnValid);
+          if (totalRows === 0) {
+            totalRows = (xnStats.numeric || 0) + (xnStats.string || 0) + (xnStats.missing || 0);
+          }
+        }
+      }
+      
+      // Xc variables (categorical predictors - use selected category observations)
+      for (var j = 0; j < STATE.assignments.xc.length; j++) {
+        var xcStats = STATE.variableStats[STATE.assignments.xc[j]];
+        if (xcStats) {
+          // Use includedObs if categories were selected, otherwise use all non-missing
+          var xcValid = xcStats.includedObs || ((xcStats.numeric || 0) + (xcStats.string || 0));
+          eligibleCount = Math.min(eligibleCount, xcValid);
+          if (totalRows === 0) {
+            totalRows = (xcStats.numeric || 0) + (xcStats.string || 0) + (xcStats.missing || 0);
+          }
+        }
+      }
+      
+      // If no valid variables, set to 0
+      if (eligibleCount === Infinity) eligibleCount = 0;
+      
+      // Calculate percentage
+      var percentage = totalRows > 0 ? Math.round((eligibleCount / totalRows) * 100) : 0;
+      
+      // Update display
+      qs('obsCount').textContent = eligibleCount;
+      qs('obsPct').textContent = '(' + percentage + '% of ' + totalRows + ' total)';
+      
+      // Update detail text (if element exists)
+      var obsDetailElem = qs('obsDetail');
+      if (obsDetailElem) {
+        var detailText = 'Minimum valid observations across ' + allVars.length + ' variable' + (allVars.length === 1 ? '' : 's');
+        if (allVars.length > 3) {
+          detailText += ': ' + allVars.slice(0, 3).join(', ') + ', +' + (allVars.length - 3) + ' more';
+        } else if (allVars.length > 0) {
+          detailText += ': ' + allVars.join(', ');
+        }
+        obsDetailElem.textContent = detailText;
+      }
+      
+      // Color code based on percentage
+      var countElem = qs('obsCount');
+      if (percentage >= 80) {
+        countElem.style.color = 'var(--accent-2)'; // Green
+      } else if (percentage >= 50) {
+        countElem.style.color = '#ffa500'; // Orange
+      } else {
+        countElem.style.color = '#ff4444'; // Red
+      }
+    }
+    
+    // Category Modal Functions
+    var pendingCategoryAssignment = null;
+    
+    function showCategoryModal(varName, stats) {
+      console.log('📊 Showing category modal for:', varName);
+      
+      // Store pending assignment
+      pendingCategoryAssignment = { varName: varName, stats: stats };
+      
+      // Update modal header
+      qs('categoryModalTitle').textContent = 'Category Distribution: ' + varName;
+      qs('categoryVarName').textContent = varName;
+      
+      // Calculate category frequencies from loaded data
+      var categoryData = calculateCategoryFrequencies(varName);
+      populateCategoryModal(categoryData);
+      
+      // Show modal
+      qs('categoryModal').classList.add('active');
+    }
+    
+    function calculateCategoryFrequencies(varName) {
+      console.log('📊 Calculating category frequencies for:', varName);
+      
+      // Check if we have categories pre-calculated from VBA
+      var stats = STATE.variableStats[varName];
+      if (stats && stats.categories && stats.categories.length > 0) {
+        console.log('✅ Using pre-calculated categories from VBA');
+        var totalObs = (stats.numeric || 0) + (stats.string || 0);
+        return {
+          totalObs: totalObs,
+          categories: stats.categories
+        };
+      }
+      
+      // Fallback: If no pre-calculated categories, return empty
+      // (VBA should have calculated them during initial load)
+      console.warn('⚠️ No category data available for:', varName);
+      return {
+        totalObs: 0,
+        categories: []
+      };
+    }
+    
+    function hideCategoryModal() {
+      qs('categoryModal').classList.remove('active');
+      pendingCategoryAssignment = null;
+    }
+    
+    function confirmCategoryAssignment() {
+      if (pendingCategoryAssignment) {
+        var varName = pendingCategoryAssignment.varName;
+        
+        // Get selected categories
+        var checkboxes = document.querySelectorAll('.category-checkbox');
+        var selectedCategories = [];
+        var includedObs = 0;
+        
+        for (var i = 0; i < checkboxes.length; i++) {
+          if (checkboxes[i].checked) {
+            selectedCategories.push(checkboxes[i].dataset.value);
+            includedObs += parseInt(checkboxes[i].dataset.freq) || 0;
+          }
+        }
+        
+        if (selectedCategories.length === 0) {
+          showToast('Please select at least one category to include.', 'warning');
+          return;
+        }
+        
+        console.log('✅ Confirming assignment of', varName, 'to Xc with', selectedCategories.length, 'categories');
+        console.log('   Selected categories:', selectedCategories);
+        console.log('   Included observations:', includedObs);
+        
+        // Assign to Xc
+        var assignedType = 'categorical';
+        
+        // Update variable type and store selected categories
+        for (var i = 0; i < STATE.variables.length; i++) {
+          if (STATE.variables[i].name === varName) {
+            STATE.variables[i].type = assignedType;
+            STATE.variables[i].selectedCategories = selectedCategories;
+            STATE.variables[i].includedObs = includedObs;
+            break;
+          }
+        }
+        
+        // Also store in variableStats
+        if (STATE.variableStats[varName]) {
+          STATE.variableStats[varName].selectedCategories = selectedCategories;
+          STATE.variableStats[varName].includedObs = includedObs;
+        }
+        
+        addVariableToZone(varName, assignedType, 'xc');
+        hideCategoryModal();
+      }
+    }
+    
+    function populateCategoryModal(categoryData) {
+      try {
+        console.log('📊 Populating category modal with data:', categoryData);
+        
+        var totalObs = categoryData.totalObs || 0;
+        var categories = categoryData.categories || [];
+        var uniqueCount = categories.length;
+        
+        // Store category data in pending assignment
+        if (pendingCategoryAssignment) {
+          pendingCategoryAssignment.categories = categories;
+          pendingCategoryAssignment.totalObs = totalObs;
+        }
+        
+        qs('categoryTotalObs').textContent = totalObs;
+        qs('categoryUniqueCount').textContent = uniqueCount;
+        qs('categorySelectedCount').textContent = uniqueCount;
+        qs('categoryIncludedObs').textContent = totalObs;
+        
+        // Populate table
+        var tbody = qs('categoryTableBody');
+        tbody.innerHTML = '';
+        
+        if (categories.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 20px; color: var(--text-muted);">No categories found</td></tr>';
+          return;
+        }
+        
+        // Sort by frequency descending
+        categories.sort(function(a, b) { return b.freq - a.freq; });
+        
+        for (var i = 0; i < categories.length; i++) {
+          var cat = categories[i];
+          var tr = document.createElement('tr');
+          tr.dataset.freq = cat.freq;
+          
+          var checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.checked = true;
+          checkbox.className = 'category-checkbox';
+          checkbox.style.cssText = 'cursor: pointer; width: 16px; height: 16px;';
+          checkbox.dataset.value = cat.value;
+          checkbox.dataset.freq = cat.freq;
+          
+          checkbox.addEventListener('change', updateCategoryStats);
+          
+          var tdCheckbox = document.createElement('td');
+          tdCheckbox.style.textAlign = 'center';
+          tdCheckbox.appendChild(checkbox);
+          
+          var tdCategory = document.createElement('td');
+          tdCategory.textContent = (cat.value === '' ? '(empty)' : cat.value);
+          
+          var tdFreq = document.createElement('td');
+          tdFreq.style.textAlign = 'center';
+          tdFreq.style.fontWeight = '700';
+          tdFreq.style.color = 'var(--accent-3)';
+          tdFreq.textContent = cat.freq;
+          
+          tr.appendChild(tdCheckbox);
+          tr.appendChild(tdCategory);
+          tr.appendChild(tdFreq);
+          tbody.appendChild(tr);
+        }
+      } catch(e) {
+        console.error('❌ Error populating category modal:', e);
+      }
+    }
+    
+    function updateCategoryStats() {
+      var checkboxes = document.querySelectorAll('.category-checkbox');
+      var selectedCount = 0;
+      var includedObs = 0;
+      
+      for (var i = 0; i < checkboxes.length; i++) {
+        if (checkboxes[i].checked) {
+          selectedCount++;
+          includedObs += parseInt(checkboxes[i].dataset.freq) || 0;
+        }
+      }
+      
+      var totalCount = checkboxes.length;
+      
+      qs('categorySelectedCount').textContent = selectedCount + ' of ' + totalCount;
+      qs('categoryIncludedObs').textContent = includedObs;
+      
+      // Update color based on percentage
+      var pct = totalCount > 0 ? (selectedCount / totalCount) * 100 : 0;
+      var obsElem = qs('categoryIncludedObs');
+      if (pct >= 80) {
+        obsElem.style.color = 'var(--accent-2)'; // Green
+      } else if (pct >= 50) {
+        obsElem.style.color = '#ffa500'; // Orange
+      } else {
+        obsElem.style.color = '#ff4444'; // Red
+      }
+      
+      // Warn if no categories selected
+      var confirmBtn = qs('btnCategoryConfirm');
+      if (selectedCount === 0) {
+        confirmBtn.disabled = true;
+        confirmBtn.style.opacity = '0.5';
+      } else {
+        confirmBtn.disabled = false;
+        confirmBtn.style.opacity = '1';
+      }
+    }
+    
+    function createDroppedVariable(varName, zoneType) {
+      var div = document.createElement('div');
+      div.className = 'dropped-variable';
+      
+      var iconClass = zoneType === 'y' ? 'fa-bullseye' : 
+                      zoneType === 'xn' ? 'fa-calculator' : 'fa-tags';
+      
+      // Check if this is a categorical variable with selected categories
+      var categoryInfo = '';
+      if (zoneType === 'xc' && STATE.variableStats[varName]) {
+        var stats = STATE.variableStats[varName];
+        if (stats.selectedCategories && stats.selectedCategories.length > 0) {
+          var totalCats = stats.categories ? stats.categories.length : 0;
+          var selCats = stats.selectedCategories.length;
+          var includedObs = stats.includedObs || 0;
+          categoryInfo = '<div style="font-size: 9px; color: var(--text-muted); margin-top: 2px; line-height: 1.2;">' +
+            '<i class="fa-solid fa-check-circle" style="color: var(--accent-3);"></i> ' +
+            selCats + '/' + totalCats + ' categories • ' + includedObs + ' obs' +
+            '</div>';
+        }
+      }
+      
+      div.innerHTML = 
+        '<div class="var-name">' +
+          '<i class="fa-solid ' + iconClass + '" style="font-size: 10px;"></i>' +
+          '<span>' + varName + '</span>' +
+          categoryInfo +
+        '</div>' +
+        '<button class="remove-btn" title="Remove"><i class="fa-solid fa-times"></i></button>';
+      
+      div.querySelector('.remove-btn').addEventListener('click', function() {
+        removeVariableFromZone(varName, zoneType);
+      });
+      
+      return div;
+    }
+    
+    function clearAssignments() {
+      STATE.assignments = { y: null, xn: [], xc: [] };
+      renderVariables(); // Re-enable all variables in the list
+      renderAssignments();
+      validateModel();
+    }
+    
+    // ============================================================================
+    // MODEL VALIDATION
+    // ============================================================================
+    function validateModel() {
+      var isValid = false;
+      var messages = [];
+      
+      if (!STATE.assignments.y) {
+        messages.push('⚠️ Response variable (Y) is required');
+      }
+      
+      if (STATE.assignments.xn.length === 0 && STATE.assignments.xc.length === 0) {
+        messages.push('⚠️ At least one predictor variable (Xn or Xc) is required');
+      }
+      
+      isValid = STATE.assignments.y && 
+                (STATE.assignments.xn.length > 0 || STATE.assignments.xc.length > 0);
+      
+      qs('btnRunAnalysis').disabled = !isValid;
+      
+      return { valid: isValid, messages: messages };
+    }
+    
+    // ============================================================================
+    // TAB SWITCHING
+    // ============================================================================
+    function switchTab(tabName) {
+      // Update tab buttons
+      var tabButtons = document.querySelectorAll('.tabs button');
+      for (var i = 0; i < tabButtons.length; i++) {
+        tabButtons[i].classList.remove('active');
+      }
+      document.querySelector('[data-tab="' + tabName + '"]').classList.add('active');
+      
+      // Update tab panels
+      var panels = document.querySelectorAll('.tab-panel');
+      for (var j = 0; j < panels.length; j++) {
+        panels[j].classList.remove('active');
+      }
+      qs('panel' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.add('active');
+    }
+    
+    // ============================================================================
+    // EVENT HANDLERS
+    // ============================================================================
+    
+    // Tab switching
+    var tabButtons = document.querySelectorAll('.tabs button');
+    for (var i = 0; i < tabButtons.length; i++) {
+      tabButtons[i].addEventListener('click', function() {
+        switchTab(this.dataset.tab);
+      });
+    }
+    
+    qs('ddlNamedRanges').addEventListener('change', function() {
+      var selectedRange = this.value;
+      var rangeInput = qs('tbRange');
+      
+      if (selectedRange) {
+        console.log('📗 Named range selected:', selectedRange);
+        
+        // Clear manual input (mutually exclusive)
+        rangeInput.value = '';
+        
+        // Send SelectNamedRange command (same as InputXL)
+        console.log('📤 Sending SelectNamedRange with range:', selectedRange);
+        sendToHost('SelectNamedRange', selectedRange);
+        
+        // Wait a moment, then load headers (EXACT same as InputXL)
+        setTimeout(function() {
+          console.log('🔄 Auto-loading headers from named range...');
+          sendToHost('GetHeadersFromExcel', JSON.stringify({ range: selectedRange, hasHeader: 1 }));
+        }, 100);
       }
     });
     
-    // Select data range from Excel
-    async function selectDataRange() {
-      try {
-        await Excel.run(async (context) => {
-          const selectedRange = context.workbook.getSelectedRange();
-          selectedRange.load("address");
-          await context.sync();
-          
-          document.getElementById('dataRange').value = selectedRange.address.split('!')[1] || selectedRange.address;
-          showStatus('Range selected: ' + selectedRange.address, 'success');
-        });
-      } catch (error) {
-        console.error('Error selecting range:', error);
-        showStatus('Error selecting range: ' + error.message, 'error');
+    qs('tbRange').addEventListener('input', function() {
+      if (this.value) {
+        qs('ddlNamedRanges').value = '';
       }
-    }
+    });
     
-    // Load data from Excel
-    async function loadData() {
-      try {
-        const rangeAddress = document.getElementById('dataRange').value.trim();
+    // Handle Enter key in range textbox to load data
+    qs('tbRange').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter' || e.keyCode === 13) {
+        e.preventDefault();
+        var range = this.value.trim();
+        if (range) {
+          console.log('🔄 Loading data from manually entered range:', range);
+          sendToHost('GetHeadersFromExcel', JSON.stringify({ 
+            range: range, 
+            hasHeader: 1 
+          }));
+        } else {
+          showToast('Please enter a valid range (e.g., Sheet1!A1:D100)', 'warning');
+        }
+      }
+    });
+    
+    qs('btnClearAll').addEventListener('click', function() {
+      if (confirm('Clear all data and reset the panel?\n\nThis will:\n• Clear the selected range\n• Remove all loaded variables\n• Clear all model assignments')) {
+        console.log('🗑️ Clearing all data and resetting panel...');
         
-        if (!rangeAddress) {
-          showStatus('Please enter or select a data range', 'error');
-          return;
+        // Clear range selection
+        qs('ddlNamedRanges').value = '';
+        qs('tbRange').value = '';
+        
+        // Clear variables and data
+        STATE.variables = [];
+        STATE.data = {};
+        STATE.variableStats = {};
+        
+        // Clear model assignments
+        STATE.assignments = { y: null, xn: [], xc: [] };
+        
+        // Reset UI
+        var variablesListBox = qs('variablesListBox');
+        variablesListBox.innerHTML = '<div style="color: var(--text-muted); font-style: italic; font-size: 12px; text-align: center; padding: 20px 10px;">No data loaded yet. Select a range above.</div>';
+        
+        // Hide observation monitor
+        qs('obsMonitor').style.display = 'none';
+        
+        renderAssignments();
+        validateModel();
+        
+        console.log('✅ Panel reset complete');
+      }
+    });
+    
+    qs('btnPick').addEventListener('click', function() {
+      console.log('📗 Pick button clicked, requesting range selection from Excel...');
+      sendToHost('PickRange', '');
+    });
+    
+    // Function for VBA to call after range selection (mimics InputXL)
+    window.setRangeAndFetch = function(range, hasHeader) {
+      try {
+        console.log('📗 setRangeAndFetch called with range:', range, 'hasHeader:', hasHeader);
+        
+        var tbRange = qs('tbRange');
+        var ddlNamedRanges = qs('ddlNamedRanges');
+        
+        if (tbRange) {
+          tbRange.value = range || '';
+          console.log('✅ Set tbRange value to:', range);
         }
         
-        showStatus('Loading data...', 'info');
+        // Clear named range dropdown (manual range entry)
+        if (ddlNamedRanges) {
+          ddlNamedRanges.value = '';
+        }
         
-        await Excel.run(async (context) => {
-          const sheet = context.workbook.worksheets.getActiveWorksheet();
-          const range = sheet.getRange(rangeAddress);
-          range.load("values, rowCount, columnCount");
-          await context.sync();
-          
-          const values = range.values;
-          const rows = range.rowCount;
-          const cols = range.columnCount;
-          
-          if (rows < 2) {
-            throw new Error('Need at least 2 rows (headers + data)');
+        // If range is provided, load data
+        if (range) {
+          // Use setTimeout to ensure UI updates before sending command
+          setTimeout(function() {
+            console.log('🔄 Sending GetHeadersFromExcel for range:', range);
+            sendToHost('GetHeadersFromExcel', JSON.stringify({ 
+              range: range, 
+              hasHeader: hasHeader || 1 
+            }));
+          }, 100);
+        }
+      } catch(e) {
+        console.error('❌ Error in setRangeAndFetch:', e);
+      }
+    };
+    
+    // Load sample data (button removed - uncomment if needed for testing)
+    // qs('btnLoadSample').addEventListener('click', function() {
+    //   loadSampleData();
+    // });
+    
+    qs('btnClear').addEventListener('click', function() {
+      if (confirm('Clear all variable assignments?\n\nAll variables will return to the available list.')) {
+        clearAssignments();
+      }
+    });
+    
+    qs('btnValidate').addEventListener('click', function() {
+      var result = validateModel();
+      
+      if (result.valid) {
+        var summary = 
+          '✓ Model Specification Valid\n\n' +
+          'Response (Y):\n  ' + STATE.assignments.y + '\n\n' +
+          'Numeric Predictors (Xn):\n  ' + (STATE.assignments.xn.length > 0 ? STATE.assignments.xn.join(', ') : '(none)') + '\n\n' +
+          'Categorical Predictors (Xc):\n  ' + (STATE.assignments.xc.length > 0 ? STATE.assignments.xc.join(', ') : '(none)');
+        
+        showToast(summary.replace(/\n/g, '<br>'), 'success', 6000);
+      } else {
+        showToast('Model Incomplete: ' + result.messages.join(', '), 'error', 5000);
+      }
+    });
+    
+    qs('btnRunAnalysis').addEventListener('click', function() {
+      var result = validateModel();
+      
+      if (!result.valid) {
+        showToast('Model Incomplete. Please assign: Response variable (Y) and at least one predictor (Xn or Xc)', 'error', 5000);
+        return;
+      }
+      
+      console.log('📤 Running regression...');
+      
+      // Get intercept checkbox value
+      var includeIntercept = qs('chkIncludeIntercept').checked ? 1 : 0;
+      
+      // Build model specification with Excel range addresses
+      var modelSpec = {
+        y: STATE.assignments.y,
+        xn: STATE.assignments.xn,
+        xc: STATE.assignments.xc,
+        intercept: includeIntercept,
+        ranges: {}
+      };
+      
+      console.log('📊 Include Intercept:', includeIntercept === 1 ? 'YES' : 'NO');
+      
+      // Add range addresses if available (from real Excel data)
+      if (STATE.variableStats) {
+        // Add Y range
+        if (STATE.assignments.y && STATE.variableStats[STATE.assignments.y]) {
+          modelSpec.ranges[STATE.assignments.y] = STATE.variableStats[STATE.assignments.y].rangeAddress;
+        }
+        
+        // Add Xn ranges
+        for (var i = 0; i < STATE.assignments.xn.length; i++) {
+          var varName = STATE.assignments.xn[i];
+          if (STATE.variableStats[varName]) {
+            modelSpec.ranges[varName] = STATE.variableStats[varName].rangeAddress;
           }
-          
-          // Extract headers
-          const headers = values[0];
-          availableColumns = headers.map(h => String(h));
-          
-          // Update variable dropdowns
-          populateVariableSelectors(availableColumns);
-          
-          // Update preview
-          document.getElementById('previewRows').textContent = rows - 1;
-          document.getElementById('previewCols').textContent = cols;
-          document.getElementById('previewVars').textContent = cols;
-          document.getElementById('previewSection').style.display = 'block';
-          
-          dataLoaded = true;
-          document.getElementById('runBtn').disabled = false;
-          
-          showStatus(`Data loaded successfully: ${rows - 1} rows, ${cols} columns`, 'success');
-        });
+        }
         
-      } catch (error) {
-        console.error('Error loading data:', error);
-        showStatus('Error loading data: ' + error.message, 'error');
+        // Add Xc ranges
+        for (var j = 0; j < STATE.assignments.xc.length; j++) {
+          var varName = STATE.assignments.xc[j];
+          if (STATE.variableStats[varName]) {
+            modelSpec.ranges[varName] = STATE.variableStats[varName].rangeAddress;
+          }
+        }
+      }
+      
+      console.log('📊 Model specification:', modelSpec);
+      sendToHost('runRegression', modelSpec);
+      
+      var xnList = STATE.assignments.xn.length > 0 ? STATE.assignments.xn.join(', ') : '(none)';
+      var xcList = STATE.assignments.xc.length > 0 ? STATE.assignments.xc.join(', ') : '(none)';
+      
+      showToast('Regression Analysis Started<br><br>' +
+            '<strong>Response:</strong> ' + STATE.assignments.y + '<br>' +
+            '<strong>Numeric:</strong> ' + xnList + '<br>' +
+            '<strong>Categorical:</strong> ' + xcList, 'success', 5000);
+    });
+    
+    // Category modal button listeners
+    qs('btnCategoryCancel').addEventListener('click', function() {
+      console.log('❌ Category assignment cancelled');
+      hideCategoryModal();
+    });
+    
+    qs('btnCategoryConfirm').addEventListener('click', function() {
+      confirmCategoryAssignment();
+    });
+    
+    qs('btnSelectAllCat').addEventListener('click', function() {
+      var checkboxes = document.querySelectorAll('.category-checkbox');
+      for (var i = 0; i < checkboxes.length; i++) {
+        checkboxes[i].checked = true;
+      }
+      updateCategoryStats();
+    });
+    
+    qs('btnDeselectAllCat').addEventListener('click', function() {
+      var checkboxes = document.querySelectorAll('.category-checkbox');
+      for (var i = 0; i < checkboxes.length; i++) {
+        checkboxes[i].checked = false;
+      }
+      updateCategoryStats();
+    });
+    
+    // Close modal when clicking overlay
+    qs('categoryModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        hideCategoryModal();
+      }
+    });
+    
+    // Setup drop zones
+    var dropZones = document.querySelectorAll('.drop-zone');
+    for (var i = 0; i < dropZones.length; i++) {
+      dropZones[i].addEventListener('dragover', handleDragOver);
+      dropZones[i].addEventListener('dragenter', handleDragEnter);
+      dropZones[i].addEventListener('dragleave', handleDragLeave);
+      dropZones[i].addEventListener('drop', handleDrop);
+    }
+    
+    qs('btnHelp').addEventListener('click', function() {
+      var helpText = 
+        '📊 REGRESSION MODEL (ANCOVA) BUILDER\n\n' +
+        'WORKFLOW:\n\n' +
+        '1. LOAD DATA\n' +
+        '   • Select named range from dropdown, OR\n' +
+        '   • Enter range address (e.g., Sheet1!A1:D100) and click Pick\n' +
+        '   • Data must include headers in first row\n\n' +
+        '2. ASSIGN VARIABLES\n' +
+        '   • Drag variables from the list to model tabs:\n' +
+        '     - Y (Response): ONE numeric variable (required)\n' +
+        '     - Xn (Numeric): Multiple numeric predictors\n' +
+        '     - Xc (Categorical): Multiple categorical predictors\n' +
+        '   • Variables are removed from list when assigned\n' +
+        '   • Click × to remove and return variable to list\n\n' +
+        '3. RUN ANALYSIS\n' +
+        '   • Validate: Check model specification\n' +
+        '   • Run Regression: Execute analysis\n\n' +
+        '💡 At least one predictor (Xn or Xc) is required';
+      
+      alert(helpText);
+    });
+    
+    // ============================================================================
+    // AUTO-LOAD CONFIGURATION - Edit these values to customize prepopulation
+    // ============================================================================
+    var AUTO_LOAD_CONFIG = {
+      enabled: true,                    // Set to false to disable auto-loading
+      namedRange: 'Loan',               // Named range to load automatically
+      yVariable: 'person_age',          // Response variable (Y)
+      xnVariables: ['Koriyandre'],      // Numeric predictors (Xn) - array of names
+      xcVariables: ['loan_status']                   // Categorical predictors (Xc) - array of names
+    };
+    
+    // ============================================================================
+    // AUTO-LOAD FUNCTION FOR TESTING/DEMO
+    // ============================================================================
+    function autoLoadLoanData() {
+      if (!AUTO_LOAD_CONFIG.enabled) {
+        console.log('ℹ️ Auto-load disabled');
+        return;
+      }
+      
+      console.log('🔄 Auto-loading named range:', AUTO_LOAD_CONFIG.namedRange);
+      
+      // Select the named range in dropdown
+      var ddl = qs('ddlNamedRanges');
+      if (ddl && ddl.querySelector('option[value="' + AUTO_LOAD_CONFIG.namedRange + '"]')) {
+        ddl.value = AUTO_LOAD_CONFIG.namedRange;
+        
+        // Trigger the change event to load the range
+        var event = new Event('change');
+        ddl.dispatchEvent(event);
+        
+        // After data loads, auto-assign variables (wait for data to load)
+        setTimeout(function() {
+          autoAssignVariables();
+        }, 2000);
+      } else {
+        console.warn('⚠️ Named range "' + AUTO_LOAD_CONFIG.namedRange + '" not found in dropdown');
       }
     }
     
-    // Populate variable selectors
-    function populateVariableSelectors(columns) {
-      // Y variable dropdown
-      const ySelect = document.getElementById('yVariable');
-      ySelect.innerHTML = '<option value="">-- Select Y Variable --</option>';
-      columns.forEach((col, i) => {
-        ySelect.innerHTML += `<option value="${i}">${col}</option>`;
-      });
+    function autoAssignVariables() {
+      console.log('🎯 Auto-assigning variables to model...');
       
-      // Numeric variables checkboxes
-      const numDiv = document.getElementById('numericVariables');
-      numDiv.innerHTML = '';
-      columns.forEach((col, i) => {
-        numDiv.innerHTML += `
-          <label class="checkbox-label">
-            <input type="checkbox" name="numeric" value="${i}" />
-            <span>${col}</span>
-          </label>
-        `;
-      });
+      // Get configuration
+      var yVar = AUTO_LOAD_CONFIG.yVariable;
+      var xnVars = AUTO_LOAD_CONFIG.xnVariables;
+      var xcVars = AUTO_LOAD_CONFIG.xcVariables;
       
-      // Categorical variables checkboxes
-      const catDiv = document.getElementById('categoricalVariables');
-      catDiv.innerHTML = '';
-      columns.forEach((col, i) => {
-        catDiv.innerHTML += `
-          <label class="checkbox-label">
-            <input type="checkbox" name="categorical" value="${i}" />
-            <span>${col}</span>
-          </label>
-        `;
-      });
+      // Check if variables are loaded
+      if (STATE.variables.length === 0) {
+        console.warn('⚠️ No variables loaded yet');
+        return;
+      }
+      
+      // Find and assign Y variable
+      for (var i = 0; i < STATE.variables.length; i++) {
+        if (STATE.variables[i].name === yVar) {
+          console.log('✅ Assigning Y:', yVar);
+          STATE.assignments.y = yVar;
+          break;
+        }
+      }
+      
+      // Find and assign Xn variables
+      for (var j = 0; j < xnVars.length; j++) {
+        for (var k = 0; k < STATE.variables.length; k++) {
+          if (STATE.variables[k].name === xnVars[j]) {
+            console.log('✅ Assigning Xn:', xnVars[j]);
+            STATE.assignments.xn.push(xnVars[j]);
+            break;
+          }
+        }
+      }
+      
+      // Find and assign Xc variables
+      for (var m = 0; m < xcVars.length; m++) {
+        for (var n = 0; n < STATE.variables.length; n++) {
+          if (STATE.variables[n].name === xcVars[m]) {
+            console.log('✅ Assigning Xc:', xcVars[m]);
+            STATE.assignments.xc.push(xcVars[m]);
+            break;
+          }
+        }
+      }
+      
+      // Update UI
+      renderVariables();
+      renderAssignments();
+      validateModel();
+      
+      console.log('✅ Auto-assignment complete!');
+      showToast('Demo data loaded: Y=' + yVar + ', Xn=' + xnVars.join(', '), 'success', 3000);
     }
     
-    // Run regression analysis
-    async function runRegression() {
-      try {
-        if (!dataLoaded) {
-          showStatus('Please load data first', 'error');
-          return;
-        }
+    // ============================================================================
+    // INITIALIZATION
+    // ============================================================================
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('✅ Mixed Regression Panel ready');
+      
+      // Request named ranges list on page load (EXACT same as InputXL)
+      setTimeout(function() {
+        console.log('📗 Requesting initial named ranges list...');
+        sendToHost('GetNamedRanges', '');
         
-        // Get selected Y variable
-        const yIndex = document.getElementById('yVariable').value;
-        if (!yIndex) {
-          showStatus('Please select a Y variable', 'error');
-          return;
-        }
-        
-        // Get selected X variables
-        const numericVars = Array.from(document.querySelectorAll('input[name="numeric"]:checked'))
-          .map(cb => cb.value);
-        const categoricalVars = Array.from(document.querySelectorAll('input[name="categorical"]:checked'))
-          .map(cb => cb.value);
-        
-        if (numericVars.length === 0 && categoricalVars.length === 0) {
-          showStatus('Please select at least one independent variable', 'error');
-          return;
-        }
-        
-        showStatus('Running regression analysis...', 'info');
-        
-        // TODO: Actual regression calculation would go here
-        // For now, navigate to results page
-        setTimeout(() => {
-          window.location.href = 'index.html';
+        // Auto-load Loan data after named ranges are loaded
+        setTimeout(function() {
+          autoLoadLoanData();
         }, 1000);
-        
-      } catch (error) {
-        console.error('Error running regression:', error);
-        showStatus('Error: ' + error.message, 'error');
-      }
-    }
+      }, 500);
+    });
     
-    // Show status message
-    function showStatus(message, type = 'info') {
-      const statusDiv = document.getElementById('statusMessage');
-      statusDiv.textContent = message;
-      statusDiv.className = `status-message ${type}`;
-      statusDiv.style.display = 'block';
-      
-      if (type === 'success') {
-        setTimeout(() => {
-          statusDiv.style.display = 'none';
-        }, 3000);
-      }
-    }
-    
-    // Show help
-    function showHelp() {
-      alert(`Regression Input Panel Help:
-
-1. DATA SELECTION
-   - Enter or select your data range (include headers in first row)
-   - Example: A1:E100
-
-2. VARIABLE ASSIGNMENT
-   - Choose Y (dependent) variable
-   - Select X (independent) variables - check all that apply
-   - Optionally select categorical variables
-
-3. MODEL OPTIONS
-   - Include intercept (recommended for most models)
-   - Choose confidence level (default: 95%)
-   - Enable VIF for multicollinearity check
-
-4. RUN ANALYSIS
-   - Click "Load Data" to preview
-   - Click "Run Regression" to analyze`);
-    }
   </script>
 </body>
 </html>
