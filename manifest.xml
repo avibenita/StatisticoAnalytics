@@ -29,7 +29,7 @@
   </Hosts>
 
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://www.statistico.live/StatisticoAnalytics/input.html"/>
+    <SourceLocation DefaultValue="https://www.statistico.live/StatisticoAnalytics/regression-unified.html"/>
   </DefaultSettings>
 
   <Permissions>ReadWriteDocument</Permissions>
@@ -92,7 +92,7 @@
       <bt:Urls>
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://www.statistico.live/StatisticoAnalytics/"/>
         <bt:Url id="Commands.Url" DefaultValue="https://www.statistico.live/StatisticoAnalytics/commands.html"/>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://www.statistico.live/StatisticoAnalytics/input.html"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://www.statistico.live/StatisticoAnalytics/regression-unified.html"/>
       </bt:Urls>
 
       <bt:ShortStrings>

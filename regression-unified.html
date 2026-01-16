@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Multiple Regression (ANCOVA) — Pure JavaScript Edition</title>
+  
+  <!-- Office.js -->
+  <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  
+  <!-- Pure JavaScript modules (no VB6) -->
+  <script type="text/javascript" src="js/regression-calculator.js"></script>
+  <script type="text/javascript" src="js/excel-integration.js"></script>
+  
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet" />
+
+  <style>
+    /* === EXACT CSS THEME FROM regression-unified.html === */
+    :root{
+      --surface-0: #0c1624;
+      --surface-1: #1a1f2e;
+      --surface-2: #242938;
+      --border: #2d3748;
+      --accent-1: rgb(255,165,120);
+      --accent-2: rgb(120,200,255);
+      --accent-3: rgb(152,195,121);
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255,255,255,0.8);
+      --text-muted: rgba(255,255,255,0.6);
+      --panel-radius: 10px;
+      --panel-shadow: 0px 4px 20px rgba(0, 0, 0, 0.4);
+      --header-color: var(--accent-1);
+    }
+    
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; padding: 0; }
+    body {
+      background: var(--surface-0);
+      color: var(--text-primary);
+      font: 14px/1.45 'Segoe UI', Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    /* === TWO-PANEL LAYOUT === */
+    .main-container {
+      display: flex;
+      height: 100vh;
+      gap: 0;
+    }
+
+    /* LEFT PANEL - Input */
+    .left-panel {
+      width: 420px;
+      flex-shrink: 0;
+      background: var(--surface-1);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* RIGHT PANEL - Results */
+    .right-panel {
+      flex: 1;
+      background: var(--surface-0);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    /* Hide right panel by default (shown after regression runs) */
+    .right-panel.hidden {
+      display: none;
+    }
+    
+    /* LEFT PANEL - Full width when right panel is hidden */
+    .left-panel.full-width {
+      flex: 1 !important;
+      max-width: 100% !important;
+    }
+
+    /* === CARD HEADER === */
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: transparent;
+      color: var(--header-color);
+      padding: 10px 14px;
+      font-weight: 600;
+      font-size: 1.15rem;
+      letter-spacing: 0.3px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-head i {
+      margin-right: 8px;
+    }
+
+    /* === LEFT PANEL CONTENT === */
+    .left-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* === RIGHT PANEL CONTENT === */
+    .right-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    /* Panel Sections */
+    .panel-section {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    .section-title {
+      color: var(--accent-1);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Form Fields */
+    .field-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+
+    .field-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 600;
+      min-width: 70px;
+    }
+
+    input[type=text], select {
+      flex: 1;
+      background: var(--surface-0);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      min-height: 32px;
+      transition: border-color 0.3s ease;
+      font-size: 13px;
+    }
+
+    input[type=text]:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-2);
+    }
+
+    /* Buttons */
+    .btn {
+      background: linear-gradient(135deg, var(--accent-1), #FF6B9D);
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 16px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      min-height: 38px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 165, 120, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn.alt {
+      background: var(--surface-2);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn.alt:hover {
+      background: var(--surface-1);
+      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* Variables Table */
+    .variables-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .variables-table thead {
+      background: var(--surface-0);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .variables-table th {
+      padding: 8px 6px;
+      text-align: left;
+      font-weight: 700;
+      color: var(--accent-1);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .variables-table th.center {
+      text-align: center;
+    }
+
+    .variables-table td {
+      padding: 8px 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .variables-table tbody tr:hover {
+      background: rgba(255, 165, 120, 0.05);
+    }
+
+    .variable-icon {
+      font-size: 14px;
+      color: var(--accent-2);
+    }
+
+    .var-assign-btn {
+      padding: 4px 8px;
+      font-size: 10px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .var-assign-btn.y {
+      background: rgba(255, 165, 120, 0.2);
+      color: var(--accent-1);
+    }
+
+    .var-assign-btn.xn {
+      background: rgba(120, 200, 255, 0.2);
+      color: var(--accent-2);
+    }
+
+    .var-assign-btn.xc {
+      background: rgba(152, 195, 121, 0.2);
+      color: var(--accent-3);
+    }
+
+    .var-assign-btn:hover {
+      transform: scale(1.05);
+      opacity: 0.8;
+    }
+
+    .var-assign-btn.active {
+      opacity: 1;
+      font-weight: 800;
+    }
+
+    /* Bucket Tabs */
+    .bucket-tabs {
+      display: flex;
+      background: var(--surface-0);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .bucket-tab {
+      flex: 1;
+      padding: 10px;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-bottom: 2px solid transparent;
+    }
+
+    .bucket-tab.active {
+      color: var(--text-primary);
+    }
+
+    .bucket-tab.y-tab.active {
+      border-bottom-color: var(--accent-1);
+    }
+
+    .bucket-tab.xn-tab.active {
+      border-bottom-color: var(--accent-2);
+    }
+
+    .bucket-tab.xc-tab.active {
+      border-bottom-color: var(--accent-3);
+    }
+
+    .tab-count {
+      font-size: 10px;
+      opacity: 0.7;
+    }
+
+    /* Drop Zones */
+    .bucket-panel {
+      padding: 10px;
+      min-height: 150px;
+    }
+
+    .drop-zone {
+      min-height: 120px;
+      border: 2px dashed var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .drop-zone.y-zone {
+      border-color: rgba(255, 165, 120, 0.3);
+      background: rgba(255, 165, 120, 0.02);
+    }
+
+    .drop-zone.xn-zone {
+      border-color: rgba(120, 200, 255, 0.3);
+      background: rgba(120, 200, 255, 0.02);
+    }
+
+    .drop-zone.xc-zone {
+      border-color: rgba(152, 195, 121, 0.3);
+      background: rgba(152, 195, 121, 0.02);
+    }
+
+    .drop-zone-placeholder {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      padding: 40px 10px;
+    }
+
+    .assigned-var-chip {
+      background: var(--surface-0);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+
+    .assigned-var-chip .remove-btn {
+      background: rgba(255, 107, 107, 0.2);
+      color: #ff6b6b;
+      border: none;
+      border-radius: 4px;
+      padding: 2px 6px;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .assigned-var-chip .remove-btn:hover {
+      background: rgba(255, 107, 107, 0.4);
+    }
+
+    /* Stats Container (Right Panel) */
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-panel {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .stat-panel-heading {
+      background: var(--surface-2);
+      padding: 10px 12px;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--accent-1);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stat-panel-body {
+      padding: 12px;
+    }
+
+    .stat-field {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .stat-field:last-child {
+      border-bottom: none;
+    }
+
+    .stat-label {
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    .stat-value {
+      color: var(--text-primary);
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    /* Regression Tables (Right Panel) */
+    .regression-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .regression-table thead {
+      background: var(--surface-2);
+    }
+
+    .regression-table th {
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 700;
+      color: var(--accent-1);
+      font-size: 11px;
+      text-transform: uppercase;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .regression-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .regression-table tbody tr:hover {
+      background: rgba(255, 165, 120, 0.05);
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    /* Dropdown Menu (Right Panel) */
+    .dropdown-container {
+      position: relative;
+    }
+
+    .dropdown-btn {
+      background: var(--surface-2);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dropdown-btn:hover {
+      background: var(--surface-1);
+    }
+
+    .dropdown-arrow {
+      font-size: 10px;
+      transition: transform 0.3s;
+    }
+
+    .dropdown-container.open .dropdown-arrow {
+      transform: rotate(180deg);
+    }
+
+    .dropdown-content {
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      min-width: 200px;
+      display: none;
+      z-index: 1000;
+    }
+
+    .dropdown-container.open .dropdown-content {
+      display: block;
+    }
+
+    .dropdown-content a {
+      display: block;
+      padding: 10px 14px;
+      color: var(--text-primary);
+      text-decoration: none;
+      font-size: 12px;
+      transition: background 0.2s;
+    }
+
+    .dropdown-content a:hover {
+      background: var(--surface-1);
+    }
+
+    .dropdown-separator {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    /* Status Message */
+    .status-msg {
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .status-msg.success {
+      background: rgba(152, 195, 121, 0.2);
+      color: var(--accent-3);
+      border: 1px solid rgba(152, 195, 121, 0.3);
+      display: block;
+    }
+
+    .status-msg.error {
+      background: rgba(255, 107, 107, 0.2);
+      color: #ff6b6b;
+      border: 1px solid rgba(255, 107, 107, 0.3);
+      display: block;
+    }
+
+    .status-msg.info {
+      background: rgba(120, 200, 255, 0.2);
+      color: var(--accent-2);
+      border: 1px solid rgba(120, 200, 255, 0.3);
+      display: block;
+    }
+
+    /* Loading Spinner */
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .spinner {
+      display: inline-block;
+      animation: spin 1s linear infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <!-- LEFT PANEL - INPUT -->
+    <div class="left-panel full-width">
+      <div class="card-head">
+        <span><i class="fa-solid fa-sliders"></i> Multiple Regression (ANCOVA)</span>
+        <button class="btn alt" onclick="clearAll()" style="width: auto; padding: 4px 8px; min-height: 28px; font-size: 11px;">
+          <i class="fa-solid fa-eraser"></i> Clear All
+        </button>
+      </div>
+
+      <div class="left-content">
+        <!-- Range Selection Panel -->
+        <div class="panel-section">
+          <div class="section-title">
+            <i class="fa-solid fa-database"></i> Pick Data Range
+          </div>
+          
+          <!-- Named Ranges -->
+          <div style="margin-bottom: 12px;">
+            <label style="font-size: 11px; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 4px;">📊 Named Ranges</label>
+            <select id="rangeSelector" onchange="loadFromNamedRange()">
+              <option value="">-- Select Named Range --</option>
+            </select>
+          </div>
+
+          <!-- Manual Selection -->
+          <div style="background: var(--surface-0); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+            <div style="font-size: 11px; color: var(--text-secondary); font-weight: 600; margin-bottom: 8px;">
+              📍 Or Select Cells in Excel
+            </div>
+            
+            <!-- Action buttons -->
+            <div style="display: flex; gap: 6px;">
+              <button class="btn alt" onclick="autoDetectRange()" style="flex: 1;">
+                <i class="fa-solid fa-magic"></i> Auto-detect
+              </button>
+              <button id="btnUseSelection" class="btn" onclick="useSelection()" style="flex: 2; background: linear-gradient(135deg, var(--accent-2), #4CAF50);" disabled>
+                <i class="fa-solid fa-check"></i> Use Selection
+              </button>
+            </div>
+          </div>
+          
+          <!-- Unified Range Display -->
+          <div id="rangeDisplay" style="display: none; background: var(--surface-2); border: 1px solid var(--accent-1); border-radius: 6px; padding: 10px; margin-bottom: 12px; font-size: 11px;">
+            <div style="color: var(--accent-1); font-weight: 600; margin-bottom: 6px;">
+              <i id="rangeIcon" class="fa-solid fa-bookmark"></i> <span id="rangeTitle"></span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 10px;">
+              <span id="rangeDetails"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Variables List Panel -->
+        <div class="panel-section variables-panel">
+          <div class="section-title">
+            <i class="fa-solid fa-list"></i> Available Variables
+          </div>
+
+          <table class="variables-table">
+            <thead>
+              <tr>
+                <th style="width: 30px;"></th>
+                <th>VARIABLE</th>
+                <th class="center" style="width: 60px;">N</th>
+                <th class="center" style="width: 150px;">ASSIGN TO</th>
+              </tr>
+            </thead>
+            <tbody id="variablesBody">
+              <tr>
+                <td colspan="4" style="text-align: center; padding: 20px; color: var(--text-muted);">
+                  No data loaded. Select a range above.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Maximum Usable Cases -->
+        <div class="panel-section" style="background: var(--surface-0); border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 11px;">
+            <i class="fa-solid fa-database" style="color: var(--accent-2);"></i>
+            <span><strong>Maximum Usable Cases:</strong> <span id="maxCases" style="color: var(--accent-2); font-weight: 600;">--</span></span>
+          </div>
+        </div>
+
+        <!-- Model Assignment Panel (3 Buckets) -->
+        <div class="panel-section" style="padding: 0; display: flex; flex-direction: column;">
+          <div class="section-title" style="padding: 10px; margin: 0; border-bottom: 1px solid var(--border);">
+            <i class="fa-solid fa-chart-line"></i> Model Assignment
+          </div>
+          
+          <!-- Tabs -->
+          <div class="bucket-tabs">
+            <button class="bucket-tab y-tab active" onclick="switchBucketTab('y')" data-tab="y">
+              <span>Y (Response) <span class="tab-count" id="countY">(0)</span></span>
+            </button>
+            <button class="bucket-tab xn-tab" onclick="switchBucketTab('xn')" data-tab="xn">
+              <span>X (numeric) <span class="tab-count" id="countXn">(0)</span></span>
+            </button>
+            <button class="bucket-tab xc-tab" onclick="switchBucketTab('xc')" data-tab="xc">
+              <span>X (Categ.) <span class="tab-count" id="countXc">(0)</span></span>
+            </button>
+          </div>
+          
+          <!-- Tab Panels -->
+          <div style="flex: 1; position: relative; min-height: 150px;">
+            <!-- Y Panel -->
+            <div class="bucket-panel active" id="panelY">
+              <div class="drop-zone y-zone" id="zoneY">
+                <div class="drop-zone-placeholder">
+                  🟠 Assign a numeric variable as Y (dependent variable)
+                </div>
+              </div>
+            </div>
+            
+            <!-- Xn Panel -->
+            <div class="bucket-panel" id="panelXn" style="display: none;">
+              <div class="drop-zone xn-zone" id="zoneXn">
+                <div class="drop-zone-placeholder">
+                  🔵 Assign numeric independent variables
+                </div>
+              </div>
+            </div>
+            
+            <!-- Xc Panel -->
+            <div class="bucket-panel" id="panelXc" style="display: none;">
+              <div class="drop-zone xc-zone" id="zoneXc">
+                <div class="drop-zone-placeholder">
+                  🟢 Assign categorical variables
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Actions -->
+          <div style="padding: 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; gap: 4px;">
+              <label style="display: flex; align-items: center; font-size: 12px; flex: 1;">
+                <input type="checkbox" id="interceptCheck" checked style="margin-right: 6px;" />
+                + Intercept
+              </label>
+            </div>
+
+            <button class="btn" onclick="runRegression()">
+              <i class="fa-solid fa-play"></i> Run Regression
+            </button>
+
+            <div id="leftStatus" class="status-msg"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL - RESULTS -->
+    <div class="right-panel hidden">
+      <div class="card-head">
+        <span><i class="fa-solid fa-chart-line"></i> Linear Regression Analysis</span>
+        <div class="dropdown-container">
+          <button class="dropdown-btn" id="dropdownBtn">
+            Navigation Menu
+            <span class="dropdown-arrow">▼</span>
+          </button>
+          <div class="dropdown-content" id="dropdownContent">
+            <a href="#" onclick="return false;">Regression Results</a>
+            <a href="residual-analysis.html">Residual Analysis</a>
+            <a href="diagnostics.html">Diagnostics</a>
+            <a href="predictions.html">Predictions</a>
+            <div class="dropdown-separator"></div>
+            <a href="descriptive-stats.html">Descriptive Statistics</a>
+            <a href="correlation-analysis.html">Correlation Analysis</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="right-content">
+        <!-- Stats Panels -->
+        <div class="stats-container">
+          <div class="stat-panel">
+            <div class="stat-panel-heading"><i class="fa-solid fa-info-circle"></i> Sample Info</div>
+            <div class="stat-panel-body">
+              <div class="stat-field">
+                <span class="stat-label">Used Obs.:</span>
+                <span id="validObs" class="stat-value">--</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">Include Intercept?:</span>
+                <span id="includeIntercept" class="stat-value">Yes</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">Numeric Variables:</span>
+                <span id="numNumericVars" class="stat-value">0</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">Categorical Variables:</span>
+                <span id="numCategoricalVars" class="stat-value">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-panel">
+            <div class="stat-panel-heading"><i class="fa-solid fa-chart-bar"></i> Model Fit</div>
+            <div class="stat-panel-body">
+              <div class="stat-field">
+                <span class="stat-label">R²:</span>
+                <span id="rSquared" class="stat-value">--</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">Adjusted R²:</span>
+                <span id="adjRSquared" class="stat-value">--</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">Root MSE:</span>
+                <span id="rootMSE" class="stat-value">--</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">AIC:</span>
+                <span id="aic" class="stat-value">--</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-panel">
+            <div class="stat-panel-heading"><i class="fa-solid fa-calculator"></i> F-Test</div>
+            <div class="stat-panel-body">
+              <div class="stat-field">
+                <span class="stat-label">F-Statistic:</span>
+                <span id="fStatistic" class="stat-value">--</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">P-value:</span>
+                <span id="fPValue" class="stat-value">--</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">Sum of Squares (Model):</span>
+                <span id="ssModel" class="stat-value">--</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ANOVA Table -->
+        <div class="stat-panel" style="min-width: 100%;">
+          <div class="stat-panel-heading"><i class="fa-solid fa-table-cells"></i> Analysis of Variance (ANOVA)</div>
+          <div class="stat-panel-body" style="padding: 0;">
+            <div class="table-container">
+              <table class="regression-table">
+                <thead>
+                  <tr>
+                    <th>Source</th>
+                    <th>Sum of Squares</th>
+                    <th>df</th>
+                    <th>Mean Square</th>
+                    <th>F</th>
+                    <th>Pr(>F)</th>
+                  </tr>
+                </thead>
+                <tbody id="anovaTableBody">
+                  <tr>
+                    <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-muted);">
+                      Run regression to see ANOVA table
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coefficients Table -->
+        <div class="stat-panel" style="min-width: 100%;">
+          <div class="stat-panel-heading"><i class="fa-solid fa-table"></i> Regression Coefficients</div>
+          <div class="stat-panel-body" style="padding: 0;">
+            <div class="table-container">
+              <table class="regression-table">
+                <thead>
+                  <tr>
+                    <th><i class="fa-solid fa-tag"></i> Variable</th>
+                    <th>Estimate</th>
+                    <th>Std Error</th>
+                    <th>t value</th>
+                    <th>Pr(>|t|)</th>
+                    <th>CI Lower</th>
+                    <th>CI Upper</th>
+                  </tr>
+                </thead>
+                <tbody id="dataTableBody">
+                  <tr>
+                    <td colspan="7" style="text-align: center; padding: 20px; color: var(--text-muted);">
+                      Run regression to see coefficients
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="rightStatus" class="status-msg"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================================
+    // STATE MANAGEMENT
+    // ============================================================================
+    const STATE = {
+      variables: [],
+      assignments: {
+        y: null,
+        xn: [],
+        xc: []
+      },
+      currentRange: null,
+      rawData: {}
+    };
+
+    // ============================================================================
+    // OFFICE.JS INITIALIZATION
+    // ============================================================================
+    Office.onReady((info) => {
+      if (info.host === Office.HostType.Excel) {
+        console.log('✅ Office.js initialized - Pure JavaScript Unified UI ready');
+        loadNamedRanges();
+        startSelectionMonitor();
+      }
+    });
+
+    // ============================================================================
+    // NAMED RANGES
+    // ============================================================================
+    function loadNamedRanges() {
+      Excel.run(async (context) => {
+        const names = context.workbook.names.load('items');
+        await context.sync();
+        
+        const selector = document.getElementById('rangeSelector');
+        selector.innerHTML = '<option value="">-- Select Named Range --</option>';
+        
+        names.items.forEach(name => {
+          const option = document.createElement('option');
+          option.value = name.name;
+          option.textContent = name.name;
+          selector.appendChild(option);
+        });
+        
+        console.log(`📗 Loaded ${names.items.length} named ranges`);
+      }).catch(error => {
+        console.error('Error loading named ranges:', error);
+      });
+    }
+
+    function loadFromNamedRange() {
+      const selector = document.getElementById('rangeSelector');
+      const rangeName = selector.value;
+      
+      if (!rangeName) return;
+      
+      Excel.run(async (context) => {
+        const namedRange = context.workbook.names.getItem(rangeName);
+        const range = namedRange.getRange();
+        range.load(['address', 'values', 'rowCount', 'columnCount']);
+        await context.sync();
+        
+        showRangeDisplay(rangeName, range.address, true);
+        processRangeData(range.values, range.address);
+      }).catch(error => {
+        showStatus('error', 'Error loading named range: ' + error.message, 'left');
+      });
+    }
+
+    // ============================================================================
+    // SELECTION MONITORING
+    // ============================================================================
+    let selectionMonitorInterval = null;
+
+    function startSelectionMonitor() {
+      if (selectionMonitorInterval) return;
+      
+      selectionMonitorInterval = setInterval(() => {
+        Excel.run(async (context) => {
+          const range = context.workbook.getSelectedRange();
+          range.load(['address', 'rowCount', 'columnCount']);
+          await context.sync();
+          
+          const btnUseSelection = document.getElementById('btnUseSelection');
+          if (range.rowCount > 1 && range.columnCount > 0) {
+            btnUseSelection.disabled = false;
+            btnUseSelection.textContent = `✓ Use ${range.address}`;
+          } else {
+            btnUseSelection.disabled = true;
+            btnUseSelection.innerHTML = '<i class="fa-solid fa-check"></i> Use Selection';
+          }
+        }).catch(() => {
+          // Silently fail if Excel is not ready
+        });
+      }, 500);
+    }
+
+    function autoDetectRange() {
+      Excel.run(async (context) => {
+        const activeCell = context.workbook.getActiveCell();
+        const expandedRange = activeCell.getSurroundingRegion();
+        expandedRange.load(['address', 'values', 'rowCount', 'columnCount']);
+        await context.sync();
+        
+        showRangeDisplay('Auto-detected', expandedRange.address, false);
+        processRangeData(expandedRange.values, expandedRange.address);
+      }).catch(error => {
+        showStatus('error', 'Auto-detect failed: ' + error.message, 'left');
+      });
+    }
+
+    function useSelection() {
+      Excel.run(async (context) => {
+        const range = context.workbook.getSelectedRange();
+        range.load(['address', 'values', 'rowCount', 'columnCount']);
+        await context.sync();
+        
+        showRangeDisplay('Manual Selection', range.address, false);
+        processRangeData(range.values, range.address);
+      }).catch(error => {
+        showStatus('error', 'Error using selection: ' + error.message, 'left');
+      });
+    }
+
+    // ============================================================================
+    // RANGE DISPLAY
+    // ============================================================================
+    function showRangeDisplay(title, address, isNamed) {
+      const display = document.getElementById('rangeDisplay');
+      const icon = document.getElementById('rangeIcon');
+      const titleSpan = document.getElementById('rangeTitle');
+      const details = document.getElementById('rangeDetails');
+      
+      icon.className = isNamed ? 'fa-solid fa-bookmark' : 'fa-solid fa-table-cells';
+      titleSpan.textContent = title;
+      details.textContent = address;
+      display.style.display = 'block';
+    }
+
+    // ============================================================================
+    // DATA PROCESSING
+    // ============================================================================
+    function processRangeData(values, address) {
+      if (values.length < 2) {
+        showStatus('error', 'Range must have at least 2 rows (header + data)', 'left');
+        return;
+      }
+      
+      // Extract headers and data
+      const headers = values[0];
+      const dataRows = values.slice(1);
+      
+      // Build variables array
+      STATE.variables = headers.map((header, colIdx) => {
+        const columnData = dataRows.map(row => row[colIdx]);
+        const validData = columnData.filter(val => val !== null && val !== undefined && val !== '');
+        
+        return {
+          name: header || `Column${colIdx + 1}`,
+          n: validData.length,
+          data: columnData,
+          colIdx: colIdx
+        };
+      });
+      
+      // Store range info
+      STATE.currentRange = address;
+      
+      // Render variables table
+      renderVariablesTable();
+      updateMaxCases();
+      showStatus('success', `✓ Loaded ${headers.length} variables from ${address}`, 'left');
+    }
+
+    function renderVariablesTable() {
+      const tbody = document.getElementById('variablesBody');
+      tbody.innerHTML = '';
+      
+      STATE.variables.forEach((variable, idx) => {
+        const tr = document.createElement('tr');
+        
+        // Icon
+        const tdIcon = document.createElement('td');
+        tdIcon.innerHTML = '<i class="fa-solid fa-database variable-icon"></i>';
+        tr.appendChild(tdIcon);
+        
+        // Name
+        const tdName = document.createElement('td');
+        tdName.textContent = variable.name;
+        tdName.style.fontWeight = '600';
+        tr.appendChild(tdName);
+        
+        // N
+        const tdN = document.createElement('td');
+        tdN.textContent = variable.n;
+        tdN.style.textAlign = 'center';
+        tr.appendChild(tdN);
+        
+        // Assign buttons
+        const tdAssign = document.createElement('td');
+        tdAssign.style.textAlign = 'center';
+        
+        const btnY = document.createElement('button');
+        btnY.className = 'var-assign-btn y';
+        btnY.textContent = 'Y';
+        btnY.onclick = () => assignVariable(idx, 'y');
+        if (STATE.assignments.y === variable.name) btnY.classList.add('active');
+        
+        const btnXn = document.createElement('button');
+        btnXn.className = 'var-assign-btn xn';
+        btnXn.textContent = 'Xn';
+        btnXn.onclick = () => assignVariable(idx, 'xn');
+        if (STATE.assignments.xn.includes(variable.name)) btnXn.classList.add('active');
+        
+        const btnXc = document.createElement('button');
+        btnXc.className = 'var-assign-btn xc';
+        btnXc.textContent = 'Xc';
+        btnXc.onclick = () => assignVariable(idx, 'xc');
+        if (STATE.assignments.xc.includes(variable.name)) btnXc.classList.add('active');
+        
+        tdAssign.appendChild(btnY);
+        tdAssign.appendChild(document.createTextNode(' '));
+        tdAssign.appendChild(btnXn);
+        tdAssign.appendChild(document.createTextNode(' '));
+        tdAssign.appendChild(btnXc);
+        
+        tr.appendChild(tdAssign);
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ============================================================================
+    // VARIABLE ASSIGNMENT
+    // ============================================================================
+    function assignVariable(varIdx, bucket) {
+      const variable = STATE.variables[varIdx];
+      
+      if (bucket === 'y') {
+        STATE.assignments.y = variable.name;
+      } else if (bucket === 'xn') {
+        const idx = STATE.assignments.xn.indexOf(variable.name);
+        if (idx >= 0) {
+          STATE.assignments.xn.splice(idx, 1);
+        } else {
+          STATE.assignments.xn.push(variable.name);
+        }
+      } else if (bucket === 'xc') {
+        const idx = STATE.assignments.xc.indexOf(variable.name);
+        if (idx >= 0) {
+          STATE.assignments.xc.splice(idx, 1);
+        } else {
+          STATE.assignments.xc.push(variable.name);
+        }
+      }
+      
+      renderVariablesTable();
+      updateBucketDisplay();
+      updateMaxCases();
+    }
+
+    function updateBucketDisplay() {
+      // Update counts
+      document.getElementById('countY').textContent = `(${STATE.assignments.y ? 1 : 0})`;
+      document.getElementById('countXn').textContent = `(${STATE.assignments.xn.length})`;
+      document.getElementById('countXc').textContent = `(${STATE.assignments.xc.length})`;
+      
+      // Update drop zones
+      updateDropZone('zoneY', STATE.assignments.y ? [STATE.assignments.y] : [], 'y');
+      updateDropZone('zoneXn', STATE.assignments.xn, 'xn');
+      updateDropZone('zoneXc', STATE.assignments.xc, 'xc');
+    }
+
+    function updateDropZone(zoneId, variables, bucket) {
+      const zone = document.getElementById(zoneId);
+      zone.innerHTML = '';
+      
+      if (variables.length === 0) {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'drop-zone-placeholder';
+        placeholder.textContent = bucket === 'y' ? '🟠 Assign a numeric variable as Y (dependent variable)' :
+                                  bucket === 'xn' ? '🔵 Assign numeric independent variables' :
+                                  '🟢 Assign categorical variables';
+        zone.appendChild(placeholder);
+      } else {
+        variables.forEach(varName => {
+          const chip = document.createElement('div');
+          chip.className = 'assigned-var-chip';
+          chip.innerHTML = `
+            <span>${varName}</span>
+            <button class="remove-btn" onclick="removeAssignment('${varName}', '${bucket}')">✕</button>
+          `;
+          zone.appendChild(chip);
+        });
+      }
+    }
+
+    function removeAssignment(varName, bucket) {
+      if (bucket === 'y') {
+        STATE.assignments.y = null;
+      } else if (bucket === 'xn') {
+        const idx = STATE.assignments.xn.indexOf(varName);
+        if (idx >= 0) STATE.assignments.xn.splice(idx, 1);
+      } else if (bucket === 'xc') {
+        const idx = STATE.assignments.xc.indexOf(varName);
+        if (idx >= 0) STATE.assignments.xc.splice(idx, 1);
+      }
+      
+      renderVariablesTable();
+      updateBucketDisplay();
+      updateMaxCases();
+    }
+
+    function switchBucketTab(bucket) {
+      // Update tab active state
+      document.querySelectorAll('.bucket-tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelector(`.bucket-tab.${bucket}-tab`).classList.add('active');
+      
+      // Update panel visibility
+      document.querySelectorAll('.bucket-panel').forEach(panel => panel.style.display = 'none');
+      document.getElementById(`panel${bucket.charAt(0).toUpperCase() + bucket.slice(1)}`).style.display = 'block';
+    }
+
+    // ============================================================================
+    // MAX CASES
+    // ============================================================================
+    function updateMaxCases() {
+      if (!STATE.assignments.y) {
+        document.getElementById('maxCases').textContent = '--';
+        return;
+      }
+      
+      const assignedVars = [STATE.assignments.y, ...STATE.assignments.xn, ...STATE.assignments.xc];
+      const varsData = STATE.variables.filter(v => assignedVars.includes(v.name));
+      
+      // Count rows with no missing values
+      const numRows = varsData[0].data.length;
+      let validCount = 0;
+      
+      for (let i = 0; i < numRows; i++) {
+        const allValid = varsData.every(v => {
+          const val = v.data[i];
+          return val !== null && val !== undefined && val !== '';
+        });
+        if (allValid) validCount++;
+      }
+      
+      document.getElementById('maxCases').textContent = validCount;
+    }
+
+    // ============================================================================
+    // RUN REGRESSION
+    // ============================================================================
+    async function runRegression() {
+      // Validate
+      if (!STATE.assignments.y) {
+        showStatus('error', 'Please assign a Y variable', 'left');
+        return;
+      }
+      
+      if (STATE.assignments.xn.length === 0 && STATE.assignments.xc.length === 0) {
+        showStatus('error', 'Please assign at least one X variable', 'left');
+        return;
+      }
+      
+      showStatus('info', '<i class="fa-solid fa-spinner spinner"></i> Running regression...', 'left');
+      
+      try {
+        // Build model spec
+        const includeIntercept = document.getElementById('interceptCheck').checked;
+        const modelSpec = {
+          y: STATE.assignments.y,
+          xn: STATE.assignments.xn,
+          xc: STATE.assignments.xc,
+          intercept: includeIntercept,
+          ranges: {}
+        };
+        
+        // Read Excel data and calculate regression
+        const excel = new ExcelIntegration();
+        
+        // Build ranges map
+        const allVars = [modelSpec.y, ...modelSpec.xn, ...modelSpec.xc];
+        allVars.forEach(varName => {
+          const variable = STATE.variables.find(v => v.name === varName);
+          if (variable) {
+            // Calculate column letter
+            const colIdx = variable.colIdx;
+            const colLetter = String.fromCharCode(65 + colIdx);
+            const numRows = variable.data.length + 1; // +1 for header
+            modelSpec.ranges[varName] = `${colLetter}1:${colLetter}${numRows}`;
+          }
+        });
+        
+        // For now, use the in-memory data directly instead of re-reading from Excel
+        const data = {};
+        allVars.forEach(varName => {
+          const variable = STATE.variables.find(v => v.name === varName);
+          if (variable) {
+            data[varName] = variable.data.map(val => {
+              if (val === null || val === undefined || val === '') return null;
+              const num = Number(val);
+              return isNaN(num) ? null : num;
+            });
+          }
+        });
+        
+        // Prepare data for regression
+        const y = data[modelSpec.y];
+        const X = [];
+        const xVarNames = [];
+        
+        // Add numeric predictors
+        if (modelSpec.xn) {
+          for (const varName of modelSpec.xn) {
+            X.push(data[varName]);
+            xVarNames.push(varName);
+          }
+        }
+        
+        // Add categorical predictors (as numeric for now)
+        if (modelSpec.xc) {
+          for (const varName of modelSpec.xc) {
+            X.push(data[varName]);
+            xVarNames.push(varName + ' (Cat)');
+          }
+        }
+        
+        // Run regression
+        const calculator = new RegressionCalculator();
+        const results = calculator.calculate(y, X, includeIntercept);
+        
+        // Add variable names to results
+        results.yVarName = modelSpec.y;
+        results.xVarNames = xVarNames;
+        if (includeIntercept) {
+          results.allVarNames = ['(Intercept)', ...xVarNames];
+        } else {
+          results.allVarNames = xVarNames;
+        }
+        results.rawData = data;
+        
+        // Display results
+        displayResults(results);
+        showRightPanel();
+        
+        showStatus('success', `✓ Regression complete! R² = ${results.rSquared.toFixed(4)}`, 'left');
+        
+      } catch (error) {
+        console.error('Regression failed:', error);
+        showStatus('error', '✗ Regression failed: ' + error.message, 'left');
+      }
+    }
+
+    // ============================================================================
+    // DISPLAY RESULTS
+    // ============================================================================
+    function displayResults(results) {
+      // Sample Info
+      document.getElementById('validObs').textContent = results.n;
+      document.getElementById('includeIntercept').textContent = results.includeIntercept ? 'Yes' : 'No';
+      
+      const numNumeric = results.xVarNames.filter(v => !v.includes('(Cat)')).length;
+      const numCategorical = results.xVarNames.filter(v => v.includes('(Cat)')).length;
+      
+      document.getElementById('numNumericVars').textContent = numNumeric;
+      document.getElementById('numCategoricalVars').textContent = numCategorical;
+      
+      // Model Fit
+      document.getElementById('rSquared').textContent = results.rSquared.toFixed(4);
+      document.getElementById('adjRSquared').textContent = results.adjRSquared.toFixed(4);
+      document.getElementById('rootMSE').textContent = results.rmse.toFixed(4);
+      document.getElementById('aic').textContent = results.aic.toFixed(2);
+      
+      // F-Test
+      document.getElementById('fStatistic').textContent = results.fStat.toFixed(2);
+      document.getElementById('fPValue').textContent = formatPValue(results.fPValue);
+      document.getElementById('ssModel').textContent = results.SSR.toFixed(2);
+      
+      // ANOVA Table
+      displayANOVATable(results);
+      
+      // Coefficients Table
+      displayCoefficientsTable(results);
+    }
+
+    function displayANOVATable(results) {
+      const tbody = document.getElementById('anovaTableBody');
+      tbody.innerHTML = '';
+      
+      // Model row
+      const trModel = document.createElement('tr');
+      trModel.innerHTML = `
+        <td>Model</td>
+        <td>${results.SSR.toFixed(4)}</td>
+        <td>${results.dfRegression}</td>
+        <td>${results.MSR.toFixed(4)}</td>
+        <td>${results.fStat.toFixed(2)}</td>
+        <td>${formatPValue(results.fPValue)}</td>
+      `;
+      tbody.appendChild(trModel);
+      
+      // Residual row
+      const trResidual = document.createElement('tr');
+      trResidual.innerHTML = `
+        <td>Residual</td>
+        <td>${results.SSE.toFixed(4)}</td>
+        <td>${results.dfResidual}</td>
+        <td>${results.MSE.toFixed(4)}</td>
+        <td>--</td>
+        <td>--</td>
+      `;
+      tbody.appendChild(trResidual);
+      
+      // Total row
+      const trTotal = document.createElement('tr');
+      trTotal.innerHTML = `
+        <td><strong>Total</strong></td>
+        <td>${results.SST.toFixed(4)}</td>
+        <td>${results.n - 1}</td>
+        <td>--</td>
+        <td>--</td>
+        <td>--</td>
+      `;
+      trTotal.style.borderTop = '2px solid var(--border)';
+      tbody.appendChild(trTotal);
+    }
+
+    function displayCoefficientsTable(results) {
+      const tbody = document.getElementById('dataTableBody');
+      tbody.innerHTML = '';
+      
+      for (let i = 0; i < results.coefficients.length; i++) {
+        const tr = document.createElement('tr');
+        
+        const pValue = results.pValues[i];
+        const stars = getSignificanceStars(pValue);
+        
+        tr.innerHTML = `
+          <td><strong>${results.allVarNames[i]}</strong></td>
+          <td>${formatNumber(results.coefficients[i], 4)}</td>
+          <td>${formatNumber(results.standardErrors[i], 4)}</td>
+          <td>${formatNumber(results.tStats[i], 3)}</td>
+          <td>${formatPValue(pValue)} ${stars}</td>
+          <td>${formatNumber(results.confIntLower[i], 4)}</td>
+          <td>${formatNumber(results.confIntUpper[i], 4)}</td>
+        `;
+        
+        tbody.appendChild(tr);
+      }
+    }
+
+    // ============================================================================
+    // UI CONTROLS
+    // ============================================================================
+    function showRightPanel() {
+      document.querySelector('.right-panel').classList.remove('hidden');
+      document.querySelector('.left-panel').classList.remove('full-width');
+    }
+
+    function clearAll() {
+      if (!confirm('Clear all data and assignments?')) return;
+      
+      STATE.variables = [];
+      STATE.assignments = { y: null, xn: [], xc: [] };
+      STATE.currentRange = null;
+      STATE.rawData = {};
+      
+      document.getElementById('variablesBody').innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-muted);">No data loaded. Select a range above.</td></tr>';
+      document.getElementById('rangeDisplay').style.display = 'none';
+      document.getElementById('rangeSelector').value = '';
+      document.getElementById('maxCases').textContent = '--';
+      
+      updateBucketDisplay();
+      showStatus('info', 'All data cleared', 'left');
+    }
+
+    // Dropdown toggle
+    document.getElementById('dropdownBtn').addEventListener('click', function() {
+      document.querySelector('.dropdown-container').classList.toggle('open');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      const dropdown = document.querySelector('.dropdown-container');
+      if (!dropdown.contains(e.target)) {
+        dropdown.classList.remove('open');
+      }
+    });
+
+    // ============================================================================
+    // HELPER FUNCTIONS
+    // ============================================================================
+    function formatNumber(value, decimals = 4) {
+      if (value === null || value === undefined || isNaN(value)) {
+        return '---';
+      }
+      if (Math.abs(value) < 0.0001 && value !== 0) {
+        return value.toExponential(2);
+      }
+      return value.toFixed(decimals);
+    }
+
+    function formatPValue(pValue) {
+      if (pValue === null || pValue === undefined || isNaN(pValue)) {
+        return '---';
+      }
+      if (pValue < 0.001) {
+        return '< 0.001';
+      }
+      return pValue.toFixed(4);
+    }
+
+    function getSignificanceStars(pValue) {
+      if (pValue < 0.001) return '***';
+      if (pValue < 0.01) return '**';
+      if (pValue < 0.05) return '*';
+      if (pValue < 0.1) return '.';
+      return '';
+    }
+
+    function showStatus(type, message, panel) {
+      const statusId = panel === 'left' ? 'leftStatus' : 'rightStatus';
+      const status = document.getElementById(statusId);
+      status.className = `status-msg ${type}`;
+      status.innerHTML = message;
+      
+      if (type === 'success' || type === 'error') {
+        setTimeout(() => {
+          status.style.display = 'none';
+        }, 5000);
+      }
+    }
+
+    console.log('✅ Pure JavaScript Unified Regression - Ready');
+  </script>
+</body>
+</html>
