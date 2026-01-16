@@ -1,0 +1,30 @@
+/* StatisticoAnalytics - Main Stylesheet */
+
+:root {
+  --surface-0: #0c1624;
+  --surface-1: #1a1f2e;
+  --surface-2: #242938;
+  --border: #2d3748;
+  --accent-1: rgb(255,165,120);
+  --accent-2: rgb(120,200,255);
+  --text-primary: #fff;
+  --text-secondary: rgba(255,255,255,0.8);
+  --text-muted: rgba(255,255,255,0.6);
+  --panel-radius: 10px;
+  --panel-shadow: 0 4px 20px rgba(0,0,0,.4);
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Add more styles as needed */
