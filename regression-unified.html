@@ -9,10 +9,6 @@
   <!-- Office.js -->
   <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
   
-  <!-- Pure JavaScript modules (no VB6) -->
-  <script type="text/javascript" src="js/regression-calculator.js"></script>
-  <script type="text/javascript" src="js/excel-integration.js"></script>
-  
   <!-- Font Awesome -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet" />
 
@@ -1241,7 +1237,7 @@
     }
 
     // ============================================================================
-    // RUN REGRESSION
+    // RUN REGRESSION (Using working JS from OLD folder)
     // ============================================================================
     async function runRegression() {
       // Validate
@@ -1258,116 +1254,283 @@
       showStatus('info', '<i class="fa-solid fa-spinner spinner"></i> Running regression...', 'left');
       
       try {
-        // Build model spec
+        // Prepare data in the correct format (X as ROWS, not columns)
         const includeIntercept = document.getElementById('interceptCheck').checked;
-        const modelSpec = {
-          y: STATE.assignments.y,
-          xn: STATE.assignments.xn,
-          xc: STATE.assignments.xc,
-          intercept: includeIntercept,
-          ranges: {}
-        };
+        const yVar = STATE.variables.find(v => v.name === STATE.assignments.y);
         
-        // Read Excel data and calculate regression
-        const excel = new ExcelIntegration();
-        
-        // Build ranges map
-        const allVars = [modelSpec.y, ...modelSpec.xn, ...modelSpec.xc];
-        allVars.forEach(varName => {
-          const variable = STATE.variables.find(v => v.name === varName);
-          if (variable) {
-            // Calculate column letter
-            const colIdx = variable.colIdx;
-            const colLetter = String.fromCharCode(65 + colIdx);
-            const numRows = variable.data.length + 1; // +1 for header
-            modelSpec.ranges[varName] = `${colLetter}1:${colLetter}${numRows}`;
-          }
-        });
-        
-        // For now, use the in-memory data directly instead of re-reading from Excel
-        const data = {};
-        allVars.forEach(varName => {
-          const variable = STATE.variables.find(v => v.name === varName);
-          if (variable) {
-            data[varName] = variable.data.map(val => {
-              if (val === null || val === undefined || val === '') return null;
-              const num = Number(val);
-              return isNaN(num) ? null : num;
-            });
-          }
-        });
-        
-        // Prepare data for regression
-        const y = data[modelSpec.y];
-        const X = [];
+        // Combine all X variables
+        const xVars = [];
         const xVarNames = [];
         
         // Add numeric predictors
-        if (modelSpec.xn) {
-          for (const varName of modelSpec.xn) {
-            X.push(data[varName]);
+        STATE.assignments.xn.forEach(varName => {
+          const v = STATE.variables.find(v => v.name === varName);
+          if (v) {
+            xVars.push(v);
             xVarNames.push(varName);
           }
-        }
+        });
         
-        // Add categorical predictors (as numeric for now)
-        if (modelSpec.xc) {
-          for (const varName of modelSpec.xc) {
-            X.push(data[varName]);
-            xVarNames.push(varName + ' (Cat)');
+        // Add categorical predictors
+        STATE.assignments.xc.forEach(varName => {
+          const v = STATE.variables.find(v => v.name === varName);
+          if (v) {
+            xVars.push(v);
+            xVarNames.push(varName);
+          }
+        });
+        
+        // Convert to numeric and build X matrix (each ROW is an observation)
+        const Y = [];
+        const X = [];
+        
+        const numObs = yVar.data.length;
+        for (let i = 0; i < numObs; i++) {
+          const yVal = Number(yVar.data[i]);
+          const xRow = xVars.map(xVar => Number(xVar.data[i]));
+          
+          // Check for missing values
+          const allValid = !isNaN(yVal) && xRow.every(x => !isNaN(x));
+          
+          if (allValid) {
+            Y.push(yVal);
+            X.push(xRow);
           }
         }
         
-        // Run regression
-        const calculator = new RegressionCalculator();
-        const results = calculator.calculate(y, X, includeIntercept);
+        console.log(`📊 Data prepared: ${Y.length} observations, ${X[0].length} predictors`);
+        console.log(`   Y: ${Y.length} values`);
+        console.log(`   X: ${X.length} rows × ${X[0].length} cols`);
         
-        // Add variable names to results
-        results.yVarName = modelSpec.y;
+        // Run regression using working computeOLS function
+        const results = computeOLS(X, Y, includeIntercept, 0.05);
+        
+        // Add variable names
+        results.yVarName = STATE.assignments.y;
         results.xVarNames = xVarNames;
-        if (includeIntercept) {
-          results.allVarNames = ['(Intercept)', ...xVarNames];
-        } else {
-          results.allVarNames = xVarNames;
-        }
-        results.rawData = data;
         
         // Display results
         displayResults(results);
         showRightPanel();
         
-        showStatus('success', `✓ Regression complete! R² = ${results.rSquared.toFixed(4)}`, 'left');
+        showStatus('success', `✓ Regression complete! R² = ${results.R2.toFixed(4)}`, 'left');
         
       } catch (error) {
         console.error('Regression failed:', error);
         showStatus('error', '✗ Regression failed: ' + error.message, 'left');
       }
     }
+    
+    // ============================================================================
+    // REGRESSION COMPUTATION (Working version from OLD folder)
+    // ============================================================================
+    function computeOLS(X, Y, includeIntercept, alpha) {
+      const n = Y.length;
+      const p = X[0].length;
+      
+      // Add intercept column if requested
+      if (includeIntercept) {
+        X = X.map(row => [1, ...row]);
+      }
+      
+      const k = X[0].length; // Number of parameters (including intercept if any)
+      
+      // Compute X'X
+      const XtX = matrixMultiply(transpose(X), X);
+      
+      // Compute (X'X)^-1
+      const XtX_inv = matrixInverse(XtX);
+      
+      // Compute coefficients: β = (X'X)^-1 X'Y
+      const Xt = transpose(X);
+      const XtY = matrixMultiply(Xt, Y.map(y => [y]));
+      const beta = matrixMultiply(XtX_inv, XtY).map(row => row[0]);
+      
+      // Compute fitted values and residuals
+      const Y_fit = X.map(row => row.reduce((sum, xi, i) => sum + xi * beta[i], 0));
+      const residuals = Y.map((yi, i) => yi - Y_fit[i]);
+      
+      // Compute sum of squares
+      const Y_mean = Y.reduce((sum, y) => sum + y, 0) / n;
+      const TSS = Y.reduce((sum, y) => sum + Math.pow(y - Y_mean, 2), 0);
+      const SSR = residuals.reduce((sum, r) => sum + r * r, 0);
+      const SSE = TSS - SSR;
+      
+      // R² and Adjusted R²
+      const R2 = 1 - (SSR / TSS);
+      const R2_adj = 1 - ((1 - R2) * (n - 1) / (n - k));
+      
+      // Standard error of regression
+      const MSE = SSR / (n - k);
+      const RMSE = Math.sqrt(MSE);
+      
+      // Standard errors of coefficients
+      const SE = beta.map((_, i) => Math.sqrt(XtX_inv[i][i] * MSE));
+      
+      // t-values
+      const t_values = beta.map((b, i) => b / SE[i]);
+      
+      // p-values (two-tailed t-test)
+      const df = n - k;
+      const p_values = t_values.map(t => 2 * (1 - tCDF(Math.abs(t), df)));
+      
+      // Confidence intervals
+      const t_crit = tInverse(alpha / 2, df);
+      const CI_lower = beta.map((b, i) => b - t_crit * SE[i]);
+      const CI_upper = beta.map((b, i) => b + t_crit * SE[i]);
+      
+      // F-statistic
+      const F_stat = (SSE / (k - 1)) / (SSR / (n - k));
+      const F_pvalue = 1 - fCDF(F_stat, k - 1, n - k);
+      
+      // AIC and BIC
+      const AIC = n * Math.log(SSR / n) + 2 * k;
+      const BIC = n * Math.log(SSR / n) + k * Math.log(n);
+      
+      return {
+        coefficients: beta,
+        std_errors: SE,
+        t_values: t_values,
+        p_values: p_values,
+        CI_lower: CI_lower,
+        CI_upper: CI_upper,
+        R2: R2,
+        R2_adj: R2_adj,
+        RMSE: RMSE,
+        MSE: MSE,
+        F_stat: F_stat,
+        F_pvalue: F_pvalue,
+        AIC: AIC,
+        BIC: BIC,
+        TSS: TSS,
+        SSR: SSR,
+        SSE: SSE,
+        n: n,
+        k: k,
+        p: p,
+        df: df,
+        includeIntercept: includeIntercept,
+        alpha: alpha,
+        residuals: residuals,
+        Y_fit: Y_fit
+      };
+    }
+    
+    // ============================================================================
+    // MATRIX OPERATIONS (Working versions from OLD folder)
+    // ============================================================================
+    function transpose(matrix) {
+      return matrix[0].map((_, colIndex) => matrix.map(row => row[colIndex]));
+    }
+    
+    function matrixMultiply(A, B) {
+      const result = [];
+      for (let i = 0; i < A.length; i++) {
+        result[i] = [];
+        for (let j = 0; j < B[0].length; j++) {
+          let sum = 0;
+          for (let k = 0; k < A[0].length; k++) {
+            sum += A[i][k] * B[k][j];
+          }
+          result[i][j] = sum;
+        }
+      }
+      return result;
+    }
+    
+    function matrixInverse(matrix) {
+      const n = matrix.length;
+      const augmented = matrix.map((row, i) => [
+        ...row,
+        ...Array(n).fill(0).map((_, j) => i === j ? 1 : 0)
+      ]);
+      
+      // Gauss-Jordan elimination
+      for (let i = 0; i < n; i++) {
+        // Find pivot
+        let maxRow = i;
+        for (let k = i + 1; k < n; k++) {
+          if (Math.abs(augmented[k][i]) > Math.abs(augmented[maxRow][i])) {
+            maxRow = k;
+          }
+        }
+        [augmented[i], augmented[maxRow]] = [augmented[maxRow], augmented[i]];
+        
+        // Make diagonal 1
+        const divisor = augmented[i][i];
+        if (Math.abs(divisor) < 1e-10) {
+          throw new Error('Matrix is singular or near-singular - check for multicollinearity');
+        }
+        for (let j = 0; j < 2 * n; j++) {
+          augmented[i][j] /= divisor;
+        }
+        
+        // Eliminate column
+        for (let k = 0; k < n; k++) {
+          if (k !== i) {
+            const factor = augmented[k][i];
+            for (let j = 0; j < 2 * n; j++) {
+              augmented[k][j] -= factor * augmented[i][j];
+            }
+          }
+        }
+      }
+      
+      // Extract inverse
+      return augmented.map(row => row.slice(n));
+    }
+    
+    // ============================================================================
+    // STATISTICAL DISTRIBUTION FUNCTIONS
+    // ============================================================================
+    function tCDF(t, df) {
+      // Approximation of Student's t CDF
+      const x = df / (df + t * t);
+      return 1 - 0.5 * incompleteBeta(df / 2, 0.5, x);
+    }
+    
+    function tInverse(p, df) {
+      // Approximation of t critical value
+      return Math.sqrt(df * (Math.pow(1 - 2 * p, -2 / df) - 1));
+    }
+    
+    function fCDF(f, df1, df2) {
+      // Approximation of F CDF
+      const x = df2 / (df2 + df1 * f);
+      return 1 - incompleteBeta(df2 / 2, df1 / 2, x);
+    }
+    
+    function incompleteBeta(a, b, x) {
+      // Simple approximation
+      if (x <= 0) return 0;
+      if (x >= 1) return 1;
+      return Math.pow(x, a) * Math.pow(1 - x, b) / (a + b);
+    }
 
     // ============================================================================
-    // DISPLAY RESULTS
+    // DISPLAY RESULTS (Updated for working JS format)
     // ============================================================================
     function displayResults(results) {
       // Sample Info
       document.getElementById('validObs').textContent = results.n;
       document.getElementById('includeIntercept').textContent = results.includeIntercept ? 'Yes' : 'No';
       
-      const numNumeric = results.xVarNames.filter(v => !v.includes('(Cat)')).length;
-      const numCategorical = results.xVarNames.filter(v => v.includes('(Cat)')).length;
+      const numNumeric = results.xVarNames.length;
+      const numCategorical = 0; // For now, treating all as numeric
       
       document.getElementById('numNumericVars').textContent = numNumeric;
       document.getElementById('numCategoricalVars').textContent = numCategorical;
       
       // Model Fit
-      document.getElementById('rSquared').textContent = results.rSquared.toFixed(4);
-      document.getElementById('adjRSquared').textContent = results.adjRSquared.toFixed(4);
-      document.getElementById('rootMSE').textContent = results.rmse.toFixed(4);
-      document.getElementById('aic').textContent = results.aic.toFixed(2);
+      document.getElementById('rSquared').textContent = results.R2.toFixed(4);
+      document.getElementById('adjRSquared').textContent = results.R2_adj.toFixed(4);
+      document.getElementById('rootMSE').textContent = results.RMSE.toFixed(4);
+      document.getElementById('aic').textContent = results.AIC.toFixed(2);
       
       // F-Test
-      document.getElementById('fStatistic').textContent = results.fStat.toFixed(2);
-      document.getElementById('fPValue').textContent = formatPValue(results.fPValue);
-      document.getElementById('ssModel').textContent = results.SSR.toFixed(2);
+      document.getElementById('fStatistic').textContent = results.F_stat.toFixed(2);
+      document.getElementById('fPValue').textContent = formatPValue(results.F_pvalue);
+      document.getElementById('ssModel').textContent = results.SSE.toFixed(2);
       
       // ANOVA Table
       displayANOVATable(results);
@@ -1380,15 +1543,19 @@
       const tbody = document.getElementById('anovaTableBody');
       tbody.innerHTML = '';
       
+      const dfModel = results.k - 1;
+      const dfResidual = results.df;
+      const msModel = results.SSE / dfModel;
+      
       // Model row
       const trModel = document.createElement('tr');
       trModel.innerHTML = `
         <td>Model</td>
-        <td>${results.SSR.toFixed(4)}</td>
-        <td>${results.dfRegression}</td>
-        <td>${results.MSR.toFixed(4)}</td>
-        <td>${results.fStat.toFixed(2)}</td>
-        <td>${formatPValue(results.fPValue)}</td>
+        <td>${results.SSE.toFixed(4)}</td>
+        <td>${dfModel}</td>
+        <td>${msModel.toFixed(4)}</td>
+        <td>${results.F_stat.toFixed(2)}</td>
+        <td>${formatPValue(results.F_pvalue)}</td>
       `;
       tbody.appendChild(trModel);
       
@@ -1396,8 +1563,8 @@
       const trResidual = document.createElement('tr');
       trResidual.innerHTML = `
         <td>Residual</td>
-        <td>${results.SSE.toFixed(4)}</td>
-        <td>${results.dfResidual}</td>
+        <td>${results.SSR.toFixed(4)}</td>
+        <td>${dfResidual}</td>
         <td>${results.MSE.toFixed(4)}</td>
         <td>--</td>
         <td>--</td>
@@ -1408,7 +1575,7 @@
       const trTotal = document.createElement('tr');
       trTotal.innerHTML = `
         <td><strong>Total</strong></td>
-        <td>${results.SST.toFixed(4)}</td>
+        <td>${results.TSS.toFixed(4)}</td>
         <td>${results.n - 1}</td>
         <td>--</td>
         <td>--</td>
@@ -1425,17 +1592,25 @@
       for (let i = 0; i < results.coefficients.length; i++) {
         const tr = document.createElement('tr');
         
-        const pValue = results.pValues[i];
+        // Variable name
+        let varName;
+        if (results.includeIntercept) {
+          varName = i === 0 ? 'Intercept' : results.xVarNames[i - 1];
+        } else {
+          varName = results.xVarNames[i];
+        }
+        
+        const pValue = results.p_values[i];
         const stars = getSignificanceStars(pValue);
         
         tr.innerHTML = `
-          <td><strong>${results.allVarNames[i]}</strong></td>
+          <td><strong>${varName}</strong></td>
           <td>${formatNumber(results.coefficients[i], 4)}</td>
-          <td>${formatNumber(results.standardErrors[i], 4)}</td>
-          <td>${formatNumber(results.tStats[i], 3)}</td>
+          <td>${formatNumber(results.std_errors[i], 4)}</td>
+          <td>${formatNumber(results.t_values[i], 3)}</td>
           <td>${formatPValue(pValue)} ${stars}</td>
-          <td>${formatNumber(results.confIntLower[i], 4)}</td>
-          <td>${formatNumber(results.confIntUpper[i], 4)}</td>
+          <td>${formatNumber(results.CI_lower[i], 4)}</td>
+          <td>${formatNumber(results.CI_upper[i], 4)}</td>
         `;
         
         tbody.appendChild(tr);
