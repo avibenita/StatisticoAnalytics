@@ -1015,6 +1015,34 @@
           </div>
         </div>
 
+        <!-- ANOVA Table -->
+        <div class="stat-panel" style="min-width: 100%;">
+          <div class="stat-panel-heading"><i class="fa-solid fa-table-cells"></i> Analysis of Variance (ANOVA)</div>
+          <div class="stat-panel-body" style="padding: 0;">
+            <div class="table-container">
+              <table class="regression-table">
+                <thead>
+                  <tr>
+                    <th>Source</th>
+                    <th>Sum of Squares</th>
+                    <th>df</th>
+                    <th>Mean Square</th>
+                    <th>F</th>
+                    <th>Pr(>F)</th>
+                  </tr>
+                </thead>
+                <tbody id="anovaTableBody">
+                  <tr>
+                    <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-muted);">
+                      Run regression to see ANOVA table
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- Coefficients Table -->
         <div class="stat-panel" style="min-width: 100%;">
           <div class="stat-panel-heading"><i class="fa-solid fa-table"></i> Regression Coefficients</div>
@@ -1315,6 +1343,12 @@
     // Open results in a popup dialog
     function openResultsPopup(data, results) {
       // Format data for popup
+      const dfModel = results.k - 1; // Model degrees of freedom
+      const dfResidual = results.n - results.k; // Residual degrees of freedom
+      const dfTotal = results.n - 1; // Total degrees of freedom
+      const msModel = results.SSE / dfModel; // Mean Square Model
+      const msResidual = results.SSR / dfResidual; // Mean Square Residual
+      
       const resultsData = {
         sampleInfo: {
           usedObs: data.n,
@@ -1332,6 +1366,24 @@
           fStatistic: results.F_stat.toFixed(4),
           pValue: results.F_pvalue < 0.0001 ? '<0.0001' : results.F_pvalue.toFixed(4),
           ssModel: results.SSE.toFixed(2)
+        },
+        anovaTable: {
+          model: {
+            ss: results.SSE.toFixed(4),
+            df: dfModel,
+            ms: msModel.toFixed(4),
+            f: results.F_stat.toFixed(4),
+            pValue: results.F_pvalue < 0.0001 ? '<0.0001' : results.F_pvalue.toFixed(4)
+          },
+          residual: {
+            ss: results.SSR.toFixed(4),
+            df: dfResidual,
+            ms: msResidual.toFixed(4)
+          },
+          total: {
+            ss: results.TSS.toFixed(4),
+            df: dfTotal
+          }
         },
         coefficients: []
       };
@@ -1402,11 +1454,12 @@
         
         // Update results in right panel
         updateSummaryStats(data, results);
+        updateANOVATable(results);
         updateCoefficientsTable(results);
       } else {
         // Production: Open dialog with results
-        // Using v2 filename to bypass aggressive caching
-        const dialogUrl = location.origin + location.pathname.replace(/[^/]*$/, '') + 'regression-results-popup-v2.html';
+        // Using v3 filename with ANOVA table
+        const dialogUrl = location.origin + location.pathname.replace(/[^/]*$/, '') + 'regression-results-popup-v3.html';
         
         console.log('🌐 PRODUCTION MODE - Opening dialog');
         console.log('📍 Dialog URL:', dialogUrl);
@@ -1573,6 +1626,72 @@
       });
       
       console.log('✅ Coefficients table updated');
+    }
+
+    // Update ANOVA table
+    function updateANOVATable(results) {
+      console.log('📊 Updating ANOVA table...');
+      
+      const tableBody = document.getElementById('anovaTableBody');
+      if (!tableBody) {
+        console.error('❌ ANOVA table not found! Looking for #anovaTableBody');
+        return;
+      }
+      
+      console.log('✅ Found ANOVA table, updating with real data...');
+      
+      // Calculate ANOVA components
+      const dfModel = results.k - 1; // Model degrees of freedom
+      const dfResidual = results.n - results.k; // Residual degrees of freedom
+      const dfTotal = results.n - 1; // Total degrees of freedom
+      const msModel = results.SSE / dfModel; // Mean Square Model
+      const msResidual = results.SSR / dfResidual; // Mean Square Residual
+      
+      // Clear existing rows
+      tableBody.innerHTML = '';
+      
+      // Model row
+      const modelRow = document.createElement('tr');
+      modelRow.innerHTML = `
+        <td><strong>Model</strong></td>
+        <td>${results.SSE.toFixed(4)}</td>
+        <td>${dfModel}</td>
+        <td>${msModel.toFixed(4)}</td>
+        <td>${results.F_stat.toFixed(4)}</td>
+        <td>${results.F_pvalue < 0.0001 ? '<0.0001' : results.F_pvalue.toFixed(4)}</td>
+      `;
+      tableBody.appendChild(modelRow);
+      
+      // Residual row
+      const residualRow = document.createElement('tr');
+      residualRow.innerHTML = `
+        <td><strong>Residual</strong></td>
+        <td>${results.SSR.toFixed(4)}</td>
+        <td>${dfResidual}</td>
+        <td>${msResidual.toFixed(4)}</td>
+        <td>-</td>
+        <td>-</td>
+      `;
+      tableBody.appendChild(residualRow);
+      
+      // Total row
+      const totalRow = document.createElement('tr');
+      totalRow.style.borderTop = '2px solid var(--border)';
+      totalRow.style.fontWeight = 'bold';
+      totalRow.innerHTML = `
+        <td><strong>Total</strong></td>
+        <td>${results.TSS.toFixed(4)}</td>
+        <td>${dfTotal}</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      `;
+      tableBody.appendChild(totalRow);
+      
+      console.log('✅ ANOVA table updated');
+      console.log(`  Model: SS=${results.SSE.toFixed(2)}, df=${dfModel}, MS=${msModel.toFixed(2)}`);
+      console.log(`  Residual: SS=${results.SSR.toFixed(2)}, df=${dfResidual}, MS=${msResidual.toFixed(2)}`);
+      console.log(`  Total: SS=${results.TSS.toFixed(2)}, df=${dfTotal}`);
     }
 
     // Clear All
