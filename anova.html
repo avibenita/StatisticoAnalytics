@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>ANOVA Analysis - StatisticoAnalytics</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet"/>
+  <link href="css/main.css" rel="stylesheet"/>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card" role="main">
+      <div class="card-head">
+        <span><i class="fa-solid fa-layer-group"></i> Analysis of Variance (ANOVA)</span>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <div class="dropdown-container">
+            <button class="dropdown-btn" id="dropdownBtn">
+              Navigation Menu
+              <span class="dropdown-arrow">▼</span>
+            </button>
+            <div class="dropdown-content" id="dropdownContent">
+              <a href="index.html">Regression Results</a>
+              <a href="anova.html" class="selected">ANOVA</a>
+              <a href="residual-analysis.html">Residual Analysis</a>
+              <a href="diagnostics.html">Diagnostics</a>
+              <a href="predictions.html">Predictions</a>
+              <div class="dropdown-separator"></div>
+              <a href="descriptive-stats.html">Descriptive Statistics</a>
+              <a href="correlation-analysis.html">Correlation Analysis</a>
+              <div class="dropdown-separator"></div>
+              <a href="data-methods.html">Data & Methods</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <!-- ANOVA Type Selection -->
+        <div class="stats-container" style="margin-bottom: 15px;">
+          <div class="stat-panel" style="min-width: 100%;">
+            <div class="stat-panel-heading"><i class="fa-solid fa-sliders"></i> ANOVA Configuration</div>
+            <div class="stat-panel-body">
+              <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                  <label style="font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 5px;">
+                    ANOVA Type:
+                  </label>
+                  <select id="anovaType" style="width: 100%; padding: 8px; background: var(--surface-2); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+                    <option value="one-way">One-Way ANOVA</option>
+                    <option value="two-way">Two-Way ANOVA</option>
+                    <option value="repeated">Repeated Measures ANOVA</option>
+                  </select>
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                  <label style="font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 5px;">
+                    Post-hoc Test:
+                  </label>
+                  <select id="postHocType" style="width: 100%; padding: 8px; background: var(--surface-2); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+                    <option value="tukey">Tukey HSD</option>
+                    <option value="bonferroni">Bonferroni</option>
+                    <option value="scheffe">Scheffé</option>
+                    <option value="dunnett">Dunnett</option>
+                  </select>
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                  <label style="font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 5px;">
+                    Significance Level (α):
+                  </label>
+                  <input type="number" id="alphaLevel" value="0.05" step="0.01" min="0.01" max="0.10" 
+                         style="width: 100%; padding: 8px; background: var(--surface-2); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="stats-container">
+          <div class="stat-panel">
+            <div class="stat-panel-heading"><i class="fa-solid fa-chart-simple"></i> Model Summary</div>
+            <div class="stat-panel-body">
+              <div class="stat-field">
+                <span class="stat-label">Groups:</span>
+                <span id="numGroups" class="stat-value">...</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">Total N:</span>
+                <span id="totalN" class="stat-value">...</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">F-statistic:</span>
+                <span id="fStatistic" class="stat-value">...</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">P-value:</span>
+                <span id="pValue" class="stat-value">...</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-panel">
+            <div class="stat-panel-heading"><i class="fa-solid fa-chart-area"></i> Effect Sizes</div>
+            <div class="stat-panel-body">
+              <div class="stat-field">
+                <span class="stat-label">Eta Squared (η²):</span>
+                <span id="etaSquared" class="stat-value">...</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">Omega Squared (ω²):</span>
+                <span id="omegaSquared" class="stat-value">...</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">Cohen's f:</span>
+                <span id="cohensF" class="stat-value">...</span>
+              </div>
+              <div class="stat-note">
+                <strong>Effect Size Guidelines:</strong><br>
+                Small: η² = 0.01 | Medium: η² = 0.06 | Large: η² = 0.14
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-panel">
+            <div class="stat-panel-heading"><i class="fa-solid fa-check-circle"></i> Assumptions</div>
+            <div class="stat-panel-body">
+              <div class="stat-field">
+                <span class="stat-label">Normality (Shapiro-Wilk):</span>
+                <span id="normalityTest" class="stat-value">...</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">Levene's Test (p):</span>
+                <span id="leveneTest" class="stat-value">...</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">Homogeneity Status:</span>
+                <span id="homogeneityStatus" class="stat-value">...</span>
+              </div>
+              <button onclick="openAssumptionsModal()" 
+                      style="width: 100%; margin-top: 10px; padding: 8px; background: var(--accent-1); color: #000; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                <i class="fa-solid fa-microscope"></i> View Detailed Checks
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ANOVA Table -->
+        <div class="stat-panel" style="min-width: 100%; margin-top: 20px;">
+          <div class="stat-panel-heading"><i class="fa-solid fa-table"></i> ANOVA Table</div>
+          <div class="stat-panel-body" style="padding: 0;">
+            <div class="table-container" style="margin: 0; border: none; border-radius: 0; max-height: 400px;">
+              <table class="regression-table">
+                <thead>
+                  <tr>
+                    <th style="text-align: left;">Source</th>
+                    <th>Sum of Squares</th>
+                    <th>df</th>
+                    <th>Mean Square</th>
+                    <th>F</th>
+                    <th>p-value</th>
+                    <th>η²</th>
+                  </tr>
+                </thead>
+                <tbody id="anovaTableBody">
+                  <tr>
+                    <td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted); font-style:italic;">
+                      <i class="fa-solid fa-upload"></i> Load sample data or upload your ANOVA data
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Post-hoc Tests -->
+        <div class="stat-panel" style="min-width: 100%; margin-top: 20px;">
+          <div class="stat-panel-heading"><i class="fa-solid fa-magnifying-glass-chart"></i> Post-hoc Pairwise Comparisons</div>
+          <div class="stat-panel-body" style="padding: 0;">
+            <div class="table-container" style="margin: 0; border: none; border-radius: 0; max-height: 400px;">
+              <table class="regression-table">
+                <thead>
+                  <tr>
+                    <th style="text-align: left;">Comparison</th>
+                    <th>Mean Difference</th>
+                    <th>Std. Error</th>
+                    <th>t-value</th>
+                    <th>p-value</th>
+                    <th>Adjusted p</th>
+                    <th>95% CI Lower</th>
+                    <th>95% CI Upper</th>
+                  </tr>
+                </thead>
+                <tbody id="postHocTableBody">
+                  <tr>
+                    <td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted); font-style:italic;">
+                      Post-hoc comparisons will appear here after ANOVA analysis
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Group Descriptives -->
+        <div class="stat-panel" style="min-width: 100%; margin-top: 20px;">
+          <div class="stat-panel-heading"><i class="fa-solid fa-users"></i> Group Descriptive Statistics</div>
+          <div class="stat-panel-body" style="padding: 0;">
+            <div class="table-container" style="margin: 0; border: none; border-radius: 0; max-height: 400px;">
+              <table class="regression-table">
+                <thead>
+                  <tr>
+                    <th style="text-align: left;">Group</th>
+                    <th>N</th>
+                    <th>Mean</th>
+                    <th>Std. Dev</th>
+                    <th>Std. Error</th>
+                    <th>95% CI Lower</th>
+                    <th>95% CI Upper</th>
+                    <th>Min</th>
+                    <th>Max</th>
+                  </tr>
+                </thead>
+                <tbody id="groupDescTableBody">
+                  <tr>
+                    <td colspan="9" style="text-align:center; padding:20px; color:var(--text-muted); font-style:italic;">
+                      Group statistics will appear here
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visualization Placeholder -->
+        <div class="stat-panel" style="min-width: 100%; margin-top: 20px;">
+          <div class="stat-panel-heading"><i class="fa-solid fa-chart-column"></i> Visualizations</div>
+          <div class="stat-panel-body">
+            <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+              <button onclick="showBoxPlot()" class="viz-btn">
+                <i class="fa-solid fa-chart-simple"></i> Box Plots
+              </button>
+              <button onclick="showInteractionPlot()" class="viz-btn">
+                <i class="fa-solid fa-arrows-split-up-and-left"></i> Interaction Plot
+              </button>
+              <button onclick="showResidualPlot()" class="viz-btn">
+                <i class="fa-solid fa-chart-scatter"></i> Residual Plot
+              </button>
+              <button onclick="showQQPlot()" class="viz-btn">
+                <i class="fa-solid fa-chart-line"></i> Q-Q Plot
+              </button>
+            </div>
+            <div id="chartContainer" style="min-height: 400px; background: var(--surface-2); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+              <div style="text-align: center;">
+                <i class="fa-solid fa-chart-column" style="font-size: 48px; margin-bottom: 15px; opacity: 0.3;"></i>
+                <p>Select a visualization type above</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+
+  <!-- Assumptions Modal -->
+  <div class="modal-overlay" id="assumptionsModal" style="display: none;">
+    <div class="modal-content" style="max-width: 1000px;">
+      <div class="modal-header">
+        <div class="modal-title"><i class="fa-solid fa-microscope"></i> ANOVA Assumptions Checks</div>
+        <button class="close-btn" onclick="closeAssumptionsModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Normality Tests by Group -->
+        <div style="margin-bottom: 25px;">
+          <h3 style="color: var(--accent-1); font-size: 1.1rem; margin-bottom: 15px;">
+            <i class="fa-solid fa-bell-curve"></i> Normality Tests (By Group)
+          </h3>
+          <table class="regression-table" style="font-size: 0.85rem;">
+            <thead>
+              <tr>
+                <th>Group</th>
+                <th>Shapiro-Wilk W</th>
+                <th>p-value</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="normalityByGroupBody">
+              <tr>
+                <td colspan="4" style="text-align: center; padding: 15px;">Awaiting data...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Homogeneity of Variance Tests -->
+        <div style="margin-bottom: 25px;">
+          <h3 style="color: var(--accent-1); font-size: 1.1rem; margin-bottom: 15px;">
+            <i class="fa-solid fa-equals"></i> Homogeneity of Variance Tests
+          </h3>
+          <table class="regression-table" style="font-size: 0.85rem;">
+            <thead>
+              <tr>
+                <th>Test</th>
+                <th>Statistic</th>
+                <th>df1</th>
+                <th>df2</th>
+                <th>p-value</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="homogeneityTestsBody">
+              <tr>
+                <td>Levene's Test</td>
+                <td id="leveneStatistic">...</td>
+                <td id="leveneDf1">...</td>
+                <td id="leveneDf2">...</td>
+                <td id="levenePValue">...</td>
+                <td id="leveneStatus">...</td>
+              </tr>
+              <tr>
+                <td>Bartlett's Test</td>
+                <td id="bartlettStatistic">...</td>
+                <td id="bartlettDf">...</td>
+                <td>—</td>
+                <td id="bartlettPValue">...</td>
+                <td id="bartlettStatus">...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Interpretation Guide -->
+        <div style="background: rgba(255, 165, 120, 0.1); border-left: 4px solid var(--accent-1); padding: 15px; border-radius: 6px;">
+          <h4 style="color: var(--accent-1); margin-top: 0;">Interpretation Guide</h4>
+          <ul style="margin: 10px 0; padding-left: 20px; line-height: 1.8;">
+            <li><strong>Normality:</strong> p > 0.05 suggests data is normally distributed (PASS)</li>
+            <li><strong>Homogeneity:</strong> p > 0.05 suggests equal variances across groups (PASS)</li>
+            <li><strong>If assumptions violated:</strong> Consider Welch's ANOVA or Kruskal-Wallis test</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .viz-btn {
+      flex: 1;
+      padding: 10px 15px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .viz-btn:hover {
+      background: var(--accent-1);
+      color: #000;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 165, 120, 0.3);
+    }
+
+    .viz-btn i {
+      margin-right: 6px;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      backdrop-filter: blur(3px);
+    }
+
+    .modal-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      max-height: 90vh;
+      background-color: var(--surface-1);
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.4);
+      border: 1px solid var(--border);
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      background-color: var(--surface-0);
+      padding: 15px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      color: var(--accent-1);
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .close-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+  </style>
+
+  <script src="js/navigation.js"></script>
+  <script>
+    console.log('✅ ANOVA Analysis page loaded');
+    
+    // Modal functions
+    function openAssumptionsModal() {
+      document.getElementById('assumptionsModal').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function closeAssumptionsModal() {
+      document.getElementById('assumptionsModal').style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+    
+    // Visualization functions (placeholders)
+    function showBoxPlot() {
+      document.getElementById('chartContainer').innerHTML = `
+        <div style="text-align: center; color: var(--text-muted);">
+          <i class="fa-solid fa-chart-simple" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
+          <p>Box Plot visualization will be rendered here</p>
+          <p style="font-size: 0.9rem;">Shows distribution of each group with median, quartiles, and outliers</p>
+        </div>
+      `;
+    }
+    
+    function showInteractionPlot() {
+      document.getElementById('chartContainer').innerHTML = `
+        <div style="text-align: center; color: var(--text-muted);">
+          <i class="fa-solid fa-arrows-split-up-and-left" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
+          <p>Interaction Plot visualization will be rendered here</p>
+          <p style="font-size: 0.9rem;">Shows how factors interact (for two-way ANOVA)</p>
+        </div>
+      `;
+    }
+    
+    function showResidualPlot() {
+      document.getElementById('chartContainer').innerHTML = `
+        <div style="text-align: center; color: var(--text-muted);">
+          <i class="fa-solid fa-chart-scatter" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
+          <p>Residual Plot visualization will be rendered here</p>
+          <p style="font-size: 0.9rem;">Checks for patterns in residuals (should be random)</p>
+        </div>
+      `;
+    }
+    
+    function showQQPlot() {
+      document.getElementById('chartContainer').innerHTML = `
+        <div style="text-align: center; color: var(--text-muted);">
+          <i class="fa-solid fa-chart-line" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
+          <p>Q-Q Plot visualization will be rendered here</p>
+          <p style="font-size: 0.9rem;">Checks if residuals follow normal distribution</p>
+        </div>
+      `;
+    }
+    
+    // Sample data loading function (placeholder)
+    function loadSampleANOVAData() {
+      console.log('📊 Loading sample ANOVA data...');
+      // This would be populated with actual data from analysis
+    }
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeAssumptionsModal();
+      }
+    });
+    
+    // Close modal when clicking outside
+    document.getElementById('assumptionsModal')?.addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeAssumptionsModal();
+      }
+    });
+  </script>
+</body>
+</html>
