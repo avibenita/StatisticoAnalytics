@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Regression Analysis - StatisticoAnalytics</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet"/>
+  <link href="css/main.css" rel="stylesheet"/>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card" role="main">
+      <div class="card-head">
+        <span><i class="fa-solid fa-chart-line"></i> Linear Regression Analysis</span>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <div class="dropdown-container">
+            <button class="dropdown-btn" id="dropdownBtn">
+              Navigation Menu
+              <span class="dropdown-arrow">▼</span>
+            </button>
+            <div class="dropdown-content" id="dropdownContent">
+              <a href="index.html" class="selected">Regression Results</a>
+              <a href="residual-analysis.html">Residual Analysis</a>
+              <a href="diagnostics.html">Diagnostics</a>
+              <a href="predictions.html">Predictions</a>
+              <div class="dropdown-separator"></div>
+              <a href="descriptive-stats.html">Descriptive Statistics</a>
+              <a href="correlation-analysis.html">Correlation Analysis</a>
+              <div class="dropdown-separator"></div>
+              <a href="data-methods.html">Data & Methods</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <!-- Stats Panels -->
+        <div class="stats-container">
+          <div class="stat-panel">
+            <div class="stat-panel-heading"><i class="fa-solid fa-info-circle"></i> Sample Info</div>
+            <div class="stat-panel-body">
+              <div class="stat-field">
+                <span class="stat-label">Observations:</span>
+                <span id="validObs" class="stat-value">...</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">Include Intercept?:</span>
+                <span id="includeIntercept" class="stat-value">...</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">Numeric Variables:</span>
+                <span id="numNumericVars" class="stat-value">...</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">Categorical Variables:</span>
+                <span id="numCategoricalVars" class="stat-value">...</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">Degrees of Freedom:</span>
+                <span id="degreesOfFreedom" class="stat-value">...</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-panel">
+            <div class="stat-panel-heading"><i class="fa-solid fa-chart-bar"></i> Model Fit</div>
+            <div class="stat-panel-body">
+              <div class="stat-field">
+                <span class="stat-label">R²:</span>
+                <span id="rSquared" class="stat-value">...</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">Adjusted R²:</span>
+                <span id="adjRSquared" class="stat-value">...</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">Root MSE:</span>
+                <span id="rootMSE" class="stat-value">...</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">AIC:</span>
+                <span id="aic" class="stat-value">...</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">BIC:</span>
+                <span id="bic" class="stat-value">...</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-panel">
+            <div class="stat-panel-heading"><i class="fa-solid fa-calculator"></i> F-Test</div>
+            <div class="stat-panel-body">
+              <div class="stat-field">
+                <span class="stat-label">F-Statistic:</span>
+                <span id="fStatistic" class="stat-value">...</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">P-value:</span>
+                <span id="fPValue" class="stat-value">...</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">Sum of Squares (Model):</span>
+                <span id="ssModel" class="stat-value">...</span>
+              </div>
+              <div class="stat-field">
+                <span class="stat-label">Sum of Squares (Residual):</span>
+                <span id="ssResidual" class="stat-value">...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coefficients Table Panel -->
+        <div class="stat-panel" style="min-width: 100%; margin-top: 0;">
+          <div class="stat-panel-heading"><i class="fa-solid fa-table"></i> Regression Coefficients</div>
+          <div class="stat-panel-body" style="padding: 0;">
+            <div class="table-container" style="margin: 0; border: none; border-radius: 0;">
+              <table class="regression-table">
+                <thead>
+                  <tr>
+                    <th><i class="fa-solid fa-tag"></i> Variable</th>
+                    <th>Coefficient</th>
+                    <th>Std. Error</th>
+                    <th>t-value</th>
+                    <th>P-value</th>
+                    <th>95% CI Lower</th>
+                    <th>95% CI Upper</th>
+                    <th>VIF</th>
+                  </tr>
+                </thead>
+                <tbody id="dataTableBody">
+                  <tr>
+                    <td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted); font-style:italic;">
+                      <i class="fa-solid fa-upload"></i> Load sample data or upload your own regression results
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Regression Equation -->
+        <div class="equation-section" id="equationSection" style="display: none;">
+          <div class="equation-title">
+            <i class="fa-solid fa-function"></i> Regression Equation
+          </div>
+          <div class="equation-formula" id="equationFormula">
+            Awaiting regression results...
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="js/navigation.js"></script>
+  <script src="js/regression-core.js"></script>
+  <script>
+    console.log('✅ StatisticoAnalytics - Regression Module loaded');
+    console.log('📊 GitHub Pages version - Self-contained, no VB6 dependencies');
+    
+    // Load sample data on startup for demonstration
+    window.addEventListener('DOMContentLoaded', function() {
+      loadSampleData();
+    });
+  </script>
+</body>
+</html>
