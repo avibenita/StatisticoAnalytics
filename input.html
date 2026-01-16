@@ -5,6 +5,14 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mixed Regression Model (ANCOVA) — Input Panel</title>
+  
+  <!-- Office.js for Excel integration -->
+  <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  
+  <!-- Pure JavaScript modules (no VB6) -->
+  <script type="text/javascript" src="js/regression-calculator.js"></script>
+  <script type="text/javascript" src="js/excel-integration.js"></script>
+  
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
   <style>
     :root{
@@ -2244,15 +2252,35 @@
       }
       
       console.log('📊 Model specification:', modelSpec);
-      sendToHost('runRegression', modelSpec);
       
       var xnList = STATE.assignments.xn.length > 0 ? STATE.assignments.xn.join(', ') : '(none)';
       var xcList = STATE.assignments.xc.length > 0 ? STATE.assignments.xc.join(', ') : '(none)';
       
-      showToast('Regression Analysis Started<br><br>' +
+      showToast('Running Regression Analysis...<br><br>' +
             '<strong>Response:</strong> ' + STATE.assignments.y + '<br>' +
             '<strong>Numeric:</strong> ' + xnList + '<br>' +
-            '<strong>Categorical:</strong> ' + xcList, 'success', 5000);
+            '<strong>Categorical:</strong> ' + xcList, 'info', 3000);
+      
+      // Run regression using pure JavaScript (no VB6)
+      var excel = new ExcelIntegration();
+      excel.runRegression(modelSpec)
+        .then(function(results) {
+          // Store results in sessionStorage
+          excel.storeResults(results);
+          
+          // Show success message
+          showToast('✅ Regression Complete!<br>R² = ' + results.rSquared.toFixed(4) + 
+                    '<br>Redirecting to results...', 'success', 2000);
+          
+          // Navigate to results page after short delay
+          setTimeout(function() {
+            window.location.href = 'index.html';
+          }, 2000);
+        })
+        .catch(function(error) {
+          console.error('❌ Regression failed:', error);
+          showToast('❌ Regression Analysis Failed<br>' + error.message, 'error', 5000);
+        });
     });
     
     // Category modal button listeners
