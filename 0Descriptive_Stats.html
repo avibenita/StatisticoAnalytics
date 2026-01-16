@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Descriptive Statistics</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/10.3.3/highcharts.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/10.3.3/highcharts-more.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/10.3.3/modules/solid-gauge.js"></script>
+  <style>
+    :root {
+      --panel-bg: #484b57;
+      --panel-radius: 10px;
+      --panel-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+      --header-bg: #333;
+      --header-color: #FFF;
+      --text-color: #FFF;
+      --highlight-color: #0984e3;
+      --hover-color: #555;
+      --selected-row-color: #2980b9;
+      --border-color: rgba(255, 255, 255, 0.2);
+      --even-row-color: #3a3f4b;
+      --odd-row-color: #484b57;
+      --chart-bg: #3a3f4b;
+      --pass-color: #2ecc71;
+      --fail-color: #e74c3c;
+    }
+
+    body {
+      background-color: #282c39;
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+      margin: 0;
+      padding: 0px;
+      color: var(--text-color);
+      overflow-x: hidden;
+      height: 100vh;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 25px;
+    }
+
+    .panel {
+      width: 90%;
+      background-color: var(--panel-bg);
+      border-radius: var(--panel-radius);
+      box-shadow: var(--panel-shadow);
+      margin-bottom: 25px;
+    }
+
+    .panel-header {
+      background-color: var(--header-bg);
+      padding: 10px !important;
+      border-top-left-radius: var(--panel-radius);
+      border-top-right-radius: var(--panel-radius);
+      font-weight: bold;
+      font-size: 20px;
+      color: var(--header-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      min-height: 30px;
+    }
+
+    .panel-body {
+      margin-top: 5px;
+      padding: 12px;
+    }
+
+    /* Modal/Popup Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: none;
+      z-index: 1000;
+      backdrop-filter: blur(3px);
+    }
+
+    .modal-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      max-width: 900px;
+      max-height: 90vh;
+      background-color: var(--panel-bg);
+      border-radius: var(--panel-radius);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      animation: modalSlideIn 0.3s ease-out;
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -60%);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+      }
+    }
+
+    .modal-header {
+      background-color: #000;
+      color: rgb(255,192,192);
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: rgb(255,192,192);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background-color 0.2s;
+    }
+
+    .modal-close:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .modal-body {
+      padding: 20px;
+      max-height: calc(90vh - 80px);
+      overflow-y: auto;
+    }
+
+    /* Normality Dashboard Styles */
+    .normality-dashboard {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      width: 100%;
+    }
+
+    .top-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: space-between;
+    }
+
+    .summary-stats {
+      flex: 1;
+      min-width: 250px;
+      background: black;
+      border-radius: 8px;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: clamp(18px, 2vw, 24px);
+      font-weight: bold;
+    }
+
+    .stat-label {
+      font-size: clamp(10px, 1vw, 12px);
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .gauge-container {
+      flex: 1;
+      min-width: 200px;
+      background: black;
+      border-radius: 8px;
+      padding: 10px;
+      height: 140px;
+      position: relative;
+    }
+
+    .gauge-title {
+      font-size: 14px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 5px;
+    }
+
+    .gauge {
+      width: 100%;
+      height: 110px;
+    }
+
+    .test-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 20px;
+    }
+
+    .test-card {
+      background: grey;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .test-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .test-name {
+      font-size: clamp(12px, 1.5vw, 14px);
+      font-weight: bold;
+    }
+
+    .test-result {
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: bold;
+    }
+
+    .pass {
+      background-color: ghostwhite;
+      color: var(--pass-color);
+    }
+
+    .fail {
+      background-color: ghostwhite;
+      color: var(--fail-color);
+    }
+
+    .test-details {
+      font-size: 15px;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .detail-label {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .detail-value {
+      font-weight: 500;
+    }
+
+    /* All the existing styles from the original file */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      color: var(--text-color);
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background-color: #333;
+      cursor: pointer;
+    }
+
+    th:hover {
+      background-color: var(--hover-color);
+    }
+
+    tr:nth-child(even) {
+      background-color: var(--even-row-color);
+    }
+
+    tr:nth-child(odd) {
+      background-color: var(--odd-row-color);
+    }
+
+    tr:hover {
+      background-color: var(--hover-color);
+      cursor: pointer;
+    }
+
+    tr.selected {
+      background-color: var(--selected-row-color);
+    }
+
+    tr.selected:hover {
+      background-color: #3498db;
+    }
+
+    td.right-align {
+      text-align: right;
+    }
+
+    .sort-arrow {
+      display: inline-block;
+      margin-left: 5px;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .decimal-control {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-left: 15px;
+    }
+
+    .decimal-control label {
+      font-size: 14px;
+      color: var(--text-color);
+    }
+
+    .decimal-control input[type="range"] {
+      width: 80px;
+    }
+
+    .decimal-control span {
+      min-width: 20px;
+      text-align: center;
+    }
+
+    .flex-container {
+      display: flex;
+      gap: 10px;
+      height: 100%;
+      align-items: stretch;
+    }
+
+    .summary-container {
+      width: 25%;
+      height: 100%;
+      background-color: var(--chart-bg);
+      border-radius: 5px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chart-wrapper {
+      width: 75%;
+      height: 100%;
+    }
+
+    .summary-table {
+      flex-grow: 1;
+      margin-bottom: 10px;
+    }
+
+    .normality-button {
+      background: linear-gradient(to right, rgb(255,192,192), rgb(255,160,160));
+      color: black;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-left: 10px;
+      transition: all 0.2s ease;
+      margin-top: auto;
+    }
+
+    .normality-button:hover {
+      background: linear-gradient(to right, rgb(255,160,160), rgb(255,192,192));
+      transform: translateY(-2px);
+    }
+
+    .summary-table td {
+      padding: 5px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .summary-table td:last-child {
+      text-align: right;
+    }
+
+    .tooltip {
+      position: absolute;
+      padding: 8px 12px;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      border-radius: 4px;
+      pointer-events: none;
+      font-size: 12px;
+      z-index: 100;
+      max-width: 200px;
+    }
+
+    @media (max-width: 768px) {
+      .flex-container {
+        flex-direction: column;
+      }
+      .chart-wrapper,
+      .summary-container {
+        width: 100%;
+      }
+      .summary-stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .test-grid {
+        grid-template-columns: 1fr;
+      }
+      .modal-content {
+        width: 95%;
+        max-height: 95vh;
+      }
+    }
+
+    .histogram-bar {
+      fill: #74b9ff;
+      stroke: #0984e3;
+      stroke-width: 1px;
+    }
+
+    .histogram-bar:hover {
+      fill: #0984e3;
+    }
+
+    .normal-curve {
+      fill: none;
+      stroke: yellow;
+      stroke-width: 2px;
+      stroke-dasharray: 5, 5;
+    }
+
+    .axis text {
+      fill: white;
+      font-size: 10px;
+    }
+
+    .axis path,
+    .axis line {
+      stroke: #999;
+    }
+
+    .grid line {
+      stroke: #555;
+      stroke-opacity: 0.7;
+      shape-rendering: crispEdges;
+    }
+
+    .grid path {
+      stroke-width: 0;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      background: #555;
+      border-radius: 5px;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 15px;
+      height: 15px;
+      background: #0984e3;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 15px;
+      height: 15px;
+      background: #0984e3;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    #stats-body {
+      display: block;
+      max-height: calc(5 * 41px);
+      overflow-y: auto;
+    }
+
+    #stats-table thead,
+    #stats-table tbody tr {
+      display: table;
+      width: 100%;
+      table-layout: fixed;
+    }
+
+    #stats-table tr {
+      height: 41px;
+    }
+
+    input[type="checkbox"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #555;
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+      position: relative;
+    }
+
+    #histogram-panel {
+      width: 80%;
+      margin-left: auto;
+      margin-right: auto;
+      max-height: 380px;
+      display: none;
+      transition: opacity 0.2s ease;
+    }
+
+    input[type="checkbox"]:checked {
+      background-color: #0984e3;
+      border-color: #0984e3;
+    }
+
+    input[type="checkbox"]:checked::after {
+      content: '✓';
+      position: absolute;
+      color: white;
+      font-size: 12px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .container > .panel {
+      transition: opacity 0.2s ease;
+    }
+
+    #stats-table th, 
+    #stats-table td {
+      vertical-align: middle;
+      text-align: center;
+    }
+
+    #stats-table th:first-child,
+    #stats-table td:first-child {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 125px;
+      text-align: left;
+    }
+
+    #stats-table th:not(:first-child),
+    #stats-table td:not(:first-child) {
+      text-align: right;
+    }
+
+    .summary-table td:first-child {
+      text-align: left;
+      padding-right: 15px;
+    }
+
+    .summary-table td:last-child {
+      text-align: right;
+      font-weight: normal;
+    }
+
+    th[data-key] {
+      position: relative;
+      padding-right: 20px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    th[data-key]::after {
+      content: "⇕";
+      position: absolute;
+      right: 8px;
+      opacity: 0.4;
+      font-size: 12px;
+    }
+
+    th[data-key]:hover::after {
+      opacity: 0.8;
+    }
+
+    th[data-key].sort-asc::after {
+      content: "↑";
+      opacity: 1;
+    }
+
+    th[data-key].sort-desc::after {
+      content: "↓";
+      opacity: 1;
+    }
+
+    th[data-key]:hover {
+      background-color: var(--hover-color);
+    }
+
+    #histogram-panel {
+      transform: translateY(20px);
+      opacity: 0;
+      transition: all 0.4s ease;
+    }
+
+    #histogram-panel.active {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .chart-container {
+      height: 350px !important;
+      padding: 6px !important;
+    }
+
+    @keyframes pulseHighlight {
+      0%   { background-color: rgba(255, 255, 0, 0.5); }
+      50%  { background-color: rgba(255, 255, 0, 0); }
+      100% { background-color: rgba(255, 255, 0, 0.5); }
+    }
+
+    .animated-critical {
+      animation: pulseHighlight 0.8s ease-in-out;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      background: gold;
+    }
+    input[type=range]::-moz-range-thumb {
+      background: gold;
+    }
+    input[type=range]::-ms-thumb {
+      background: gold;
+    }
+    input[type=range] {
+      accent-color: gold;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header with Dropdown -->
+  <dropdown-menu></dropdown-menu>
+
+  <div class="container">
+    <!-- Main stats table -->
+    <div class="panel">
+      <div class="panel-header">
+        Descriptive Statistics
+        <div class="control-group">
+          <div class="decimal-control">
+            <label for="decimal-places">Decimals:</label>
+            <input type="range" id="decimal-places" min="0" max="4" value="2" style="width: 80px;">
+            <span id="decimal-value">2</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div style="overflow-x: auto;">
+          <table id="stats-table">
+            <thead>
+              <tr>
+                <th data-key="Variable">Variable <span class="sort-arrow" id="Variable-arrow"></span></th>
+                <th data-key="N">N <span class="sort-arrow" id="N-arrow"></span></th>
+                <th data-key="Mean">Mean <span class="sort-arrow" id="Mean-arrow"></span></th>
+                <th data-key="StdDev">StdDev <span class="sort-arrow" id="StdDev-arrow"></span></th>
+                <th data-key="Min">Min <span class="sort-arrow" id="Min-arrow"></span></th>
+                <th data-key="Median">Median <span class="sort-arrow" id="Median-arrow"></span></th>
+                <th data-key="Max">Max <span class="sort-arrow" id="Max-arrow"></span></th>
+                <th data-key="Skew">Skew <span class="sort-arrow" id="Skew-arrow"></span></th>
+                <th data-key="Kurt">Kurt <span class="sort-arrow" id="Kurt-arrow"></span></th>
+              </tr>
+            </thead>
+            <tbody id="stats-body">
+              <!-- Table content will be added dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Histogram panel (initially hidden) -->
+    <div class="panel" id="histogram-panel" style="display: none;">
+      <div class="panel-header">
+        <span id="histogram-title">Histogram</span>
+        <div class="control-group">
+          <label for="num-bins">Bins:</label>
+          <input type="range" id="num-bins" min="5" max="20" value="10" style="width: 100px;">
+          <span id="bins-value">10</span>
+          
+          <label for="show-normal" style="margin-left: 15px;">Show Normal:</label>
+          <input type="checkbox" id="show-normal" checked>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="flex-container">
+          <div class="chart-wrapper">
+            <div class="chart-container" id="histogram-container">
+              <!-- D3 histogram will be rendered here -->
+            </div>
+          </div>
+          <div class="summary-container">
+            <h3 style="text-align: center; margin-top: 0;">Summary</h3>
+            <table class="summary-table" id="summary-table">
+              <!-- Summary data will be added here -->
+            </table>
+            <button class="normality-button" onclick="openNormalityModal()">Normality Tests</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Normality Test Modal -->
+  <div id="normality-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>Tests of Normality - <span id="modal-variable-name">Variable</span></span>
+        <button class="modal-close" onclick="closeNormalityModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="normality-dashboard">
+          <div class="top-row">
+            <div class="summary-stats">
+              <div class="stat-item">
+                <div class="stat-value" id="pass-count">4</div>
+                <div class="stat-label">Tests Passed</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="fail-count">2</div>
+                <div class="stat-label">Tests Failed</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="sample-size">120</div>
+                <div class="stat-label">Sample Size</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="significance">0.05</div>
+                <div class="stat-item" style="grid-column: span 4;">
+                  <label for="alpha-slider" style="display:block; font-size: 12px; margin-bottom: 2px;">Significance</label>
+                  <input type="range" id="alpha-slider" min="0.01" max="0.20" step="0.01" value="0.05"  
+                  onchange="document.getElementById('significance').textContent = parseFloat(this.value).toFixed(2);" 
+                  style="width: 100%;">
+                </div>
+                <div class="stat-label">Adjust</div>
+              </div>
+            </div>
+
+            <div class="gauge-container">
+              <div class="gauge-title">Normality Strength Index</div>
+              <div id="gauge-container" class="gauge"></div>
+            </div>
+          </div>
+
+          <div class="test-grid">
+            <!-- Shapiro-Wilk Test -->
+            <div class="test-card" data-test="shapirowilk">
+              <div class="test-header">
+                <div class="test-name">Shapiro-Wilk Test</div>
+                <div class="test-result pass">PASS</div>
+              </div>
+              <div class="test-details">
+                <div class="detail-row">
+                  <div class="detail-label">Statistic:</div>
+                  <div class="detail-value">0.986</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">p-value:</div>
+                  <div class="detail-value">0.234</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">Critical:</div>
+                  <div class="detail-value">0.05</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Anderson-Darling Test -->
+            <div class="test-card" data-test="andersondarling">
+              <div class="test-header">
+                <div class="test-name">Anderson-Darling</div>
+                <div class="test-result pass">PASS</div>
+              </div>
+              <div class="test-details">
+                <div class="detail-row">
+                  <div class="detail-label">Statistic:</div>
+                  <div class="detail-value">0.412</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">p-value:</div>
+                  <div class="detail-value">0.335</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">Critical:</div>
+                  <div class="detail-value">0.751</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Kolmogorov-Smirnov Test -->
+            <div class="test-card" data-test="kolmogorovsmirnov">
+              <div class="test-header">
+                <div class="test-name">Kolmogorov-Smirnov</div>
+                <div class="test-result pass">PASS</div>
+              </div>
+              <div class="test-details">
+                <div class="detail-row">
+                  <div class="detail-label">Statistic:</div>
+                  <div class="detail-value">0.052</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">p-value:</div>
+                  <div class="detail-value">0.173</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">Critical:</div>
+                  <div class="detail-value">0.124</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cramer-von Mises Test -->
+            <div class="test-card" data-test="cramervonmises">
+              <div class="test-header">
+                <div class="test-name">Cramer-von Mises</div>
+                <div class="test-result pass">PASS</div>
+              </div>
+              <div class="test-details">
+                <div class="detail-row">
+                  <div class="detail-label">Statistic:</div>
+                  <div class="detail-value">0.072</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">p-value:</div>
+                  <div class="detail-value">0.261</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">Critical:</div>
+                  <div class="detail-value">0.126</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- D'Agostino-Pearson Test -->
+            <div class="test-card" data-test="dagostinopearson">
+              <div class="test-header">
+                <div class="test-name">D'Agostino-Pearson</div>
+                <div class="test-result fail">FAIL</div>
+              </div>
+              <div class="test-details">
+                <div class="detail-row">
+                  <div class="detail-label">Statistic:</div>
+                  <div class="detail-value">7.842</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">p-value:</div>
+                  <div class="detail-value">0.0198</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">Critical:</div>
+                  <div class="detail-value">0.05</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Jarque-Bera Test -->
+            <div class="test-card" data-test="jarquebera">
+              <div class="test-header">
+                <div class="test-name">Jarque-Bera Test</div>
+                <div class="test-result fail">FAIL</div>
+              </div>
+              <div class="test-details">
+                <div class="detail-row">
+                  <div class="detail-label">Statistic:</div>
+                  <div class="detail-value">8.126</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">p-value:</div>
+                  <div class="detail-value">0.0172</div>
+                </div>
+                <div class="detail-row">
+                  <div class="detail-label">Critical:</div>
+                  <div class="detail-value">0.05</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tooltip" class="tooltip" style="opacity: 0;"></div>
+
+  <script>
+    // Global variables
+    let VarNameSelected = "";
+    let data = [];
+    let sortConfig = { key: null, direction: 'ascending' };
+    let selectedRow = null;
+    let numBins = 10;
+    let showNormal = true;
+    let decimalPlaces = 2;
+
+    // Modal functions
+    function openNormalityModal() {
+      if (!selectedRow) {
+        alert('Please select a variable first');
+        return;
+      }
+      
+      // Update modal title with variable name
+      document.getElementById('modal-variable-name').textContent = selectedRow.Variable;
+      
+      // Show the modal
+      document.getElementById('normality-modal').style.display = 'block';
+      document.body.style.overflow = 'hidden'; // Prevent scrolling of background
+      
+      // Initialize the gauge chart if not already done
+      setTimeout(() => {
+        initializeGaugeChart();
+        // Load sample normality test data
+        loadSampleNormalityData();
+      }, 100);
+      
+      // Send message to VB6 if needed
+      if (typeof sendMessageToVB6 === 'function') {
+        alert (VarNameSelected);
+        sendMessageToVB6('Case400', VarNameSelected);
+      }
+    }
+
+    function closeNormalityModal() {
+      document.getElementById('normality-modal').style.display = 'none';
+      document.body.style.overflow = 'auto'; // Restore scrolling
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', function(event) {
+      const modal = document.getElementById('normality-modal');
+      if (event.target === modal) {
+        closeNormalityModal();
+      }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeNormalityModal();
+      }
+    });
+
+    // Sample data generator
+    function generateSampleData() {
+      const variables = ['Height', 'Weight', 'Age', 'Blood Pressure', 'Cholesterol', 'Heart Rate'];
+      
+      return variables.map((varName, i) => {
+        const baseN = 100 + i * 10;
+        const baseMean = 50 + i * 15;
+        const baseStdDev = 5 + i * 2;
+        
+        return {
+          Variable: varName,
+          N: baseN,
+          Mean: baseMean,
+          StdDev: baseStdDev,
+          LCL: baseMean - 1.96 * baseStdDev / Math.sqrt(baseN),
+          UCL: baseMean + 1.96 * baseStdDev / Math.sqrt(baseN),
+          Sum: baseMean * baseN,
+          Min: baseMean - baseStdDev * 2.5,
+          Q1: baseMean - baseStdDev * 0.7,
+          Median: baseMean - baseStdDev * 0.1,
+          Q3: baseMean + baseStdDev * 0.6,
+          Max: baseMean + baseStdDev * 2.3,
+          Skew: parseFloat((Math.random() * 2 - 1).toFixed(2)),
+          Kurt: parseFloat((Math.random() * 4 - 2).toFixed(2)),
+          vector: Array.from({ length: 500 }, () => {
+            const u1 = Math.random();
+            const u2 = Math.random();
+            const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+            return baseMean + baseStdDev * z;
+          })
+        };
+      });
+    }
+
+    // Format number to specified decimal places
+    function formatNumber(num) {
+      if (typeof num !== 'number') return num;
+      return num.toFixed(decimalPlaces);
+    }
+
+    // Sort data based on current sort configuration
+    function getSortedData() {
+      const sortableData = [...data];
+      if (sortConfig.key) {
+        sortableData.sort((a, b) => {
+          if (a[sortConfig.key] < b[sortConfig.key]) {
+            return sortConfig.direction === 'ascending' ? -1 : 1;
+          }
+          if (a[sortConfig.key] > b[sortConfig.key]) {
+            return sortConfig.direction === 'ascending' ? 1 : -1;
+          }
+          return 0;
+        });
+      }
+      return sortableData;
+    }
+
+    // Request sort by column
+    function requestSort(key) {
+      let direction = 'ascending';
+      if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+        direction = 'descending';
+      }
+      sortConfig = { key, direction };
+      
+      document.querySelectorAll('.sort-arrow').forEach(arrow => {
+        arrow.textContent = '';
+      });
+      
+      const arrow = document.getElementById(`${key}-arrow`);
+      if (arrow) {
+        arrow.textContent = direction === 'ascending' ? ' ↑' : ' ↓';
+      }
+      
+      renderTable();
+    }
+
+    // Generate histogram data from vector
+    function generateHistogramData(vector, bins) {
+      if (!vector || vector.length === 0) return [];
+      
+      const min = Math.min(...vector);
+      const max = Math.max(...vector);
+      const range = max - min;
+      const binWidth = range / bins;
+      
+      const histData = Array.from({ length: bins }, (_, i) => {
+        const start = min + i * binWidth;
+        const end = min + (i + 1) * binWidth;
+        return {
+          bin: `${start.toFixed(1)}-${end.toFixed(1)}`,
+          start: start,
+          end: end,
+          count: 0,
+          frequency: 0
+        };
+      });
+      
+      vector.forEach(value => {
+        const binIndex = Math.min(bins - 1, Math.floor((value - min) / binWidth));
+        histData[binIndex].count++;
+      });
+      
+      histData.forEach(bin => {
+        bin.frequency = bin.count / vector.length;
+      });
+      
+      return histData;
+    }
+
+    // Generate normal distribution data
+    function generateNormalCurve(mean, stdDev, min, max, points = 50) {
+      const range = max - min;
+      const step = range / points;
+      const result = [];
+      
+      for (let x = min - range * 0.1; x <= max + range * 0.1; x += step) {
+        const exponent = -Math.pow(x - mean, 2) / (2 * Math.pow(stdDev, 2));
+        const y = (1 / (stdDev * Math.sqrt(2 * Math.PI))) * Math.exp(exponent);
+        result.push({ x, y });
+      }
+      
+      return result;
+    }
+
+    // Render table with current data and sort configuration
+    function renderTable() {
+      const sortedData = getSortedData();
+      const tbody = document.getElementById('stats-body');
+      tbody.innerHTML = '';
+      
+      sortedData.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        
+        if (selectedRow && selectedRow.Variable === row.Variable) {
+          tr.className = 'selected';
+        }
+        
+        const tdVariable = document.createElement('td');
+        tdVariable.textContent = row.Variable;
+        tr.appendChild(tdVariable);
+        
+        const fields = ['N', 'Mean', 'StdDev', 'Min', 'Median', 'Max', 'Skew', 'Kurt'];
+        fields.forEach(field => {
+          const td = document.createElement('td');
+          td.className = 'right-align';
+          td.textContent = field === 'N' ? row[field] : formatNumber(row[field]);
+          tr.appendChild(td);
+        });
+        
+        tr.addEventListener('click', () => handleRowClick(row));
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Handle row click - select row and show histogram
+    function handleRowClick(rowData) {
+      selectedRow = rowData;
+      VarNameSelected = rowData.Variable;
+      renderTable();
+      
+      document.getElementById('histogram-title').textContent = `${rowData.Variable}`;
+      
+      const panel = document.getElementById('histogram-panel');
+      panel.style.display = 'block';
+      void panel.offsetWidth;
+      panel.classList.add('active');
+      
+      renderHistogram();
+      updateSummaryTable();
+    }
+
+    // Update summary table with selected row data
+    function updateSummaryTable() {
+      if (!selectedRow) return;
+      
+      const summaryTable = document.getElementById('summary-table');
+      summaryTable.innerHTML = '';
+      
+      const summaryFields = [
+        { label: 'N', value: selectedRow.N },
+        { label: 'Mean', value: formatNumber(selectedRow.Mean) },
+        { label: 'StdDev', value: formatNumber(selectedRow.StdDev) },
+        { label: 'Min', value: formatNumber(selectedRow.Min) },
+        { label: 'Median', value: formatNumber(selectedRow.Median) },
+        { label: 'Max', value: formatNumber(selectedRow.Max) },
+        { label: 'Skew', value: formatNumber(selectedRow.Skew) },
+        { label: 'Kurt', value: formatNumber(selectedRow.Kurt) }
+      ];
+      
+      summaryFields.forEach(field => {
+        const tr = document.createElement('tr');
+        tr.style.lineHeight = '1.2';
+        
+        const tdLabel = document.createElement('td');
+        tdLabel.textContent = field.label + ':';
+        tdLabel.style.fontWeight = 'bold';
+        tdLabel.style.fontSize = '12px';
+        
+        const tdValue = document.createElement('td');
+        tdValue.textContent = field.value;
+        tdValue.style.fontSize = '12px';
+        
+        tr.appendChild(tdLabel);
+        tr.appendChild(tdValue);
+        summaryTable.appendChild(tr);
+      });
+    }
+
+    // Render histogram using D3.js
+    function renderHistogram() {
+      if (!selectedRow || !selectedRow.vector) return;
+      
+      const container = document.getElementById('histogram-container');
+      const width = container.clientWidth;
+      const height = container.clientHeight * 0.8;
+      
+      d3.select('#histogram-container').selectAll('*').remove();
+      
+      const svg = d3.select('#histogram-container')
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height);
+      
+      const margin = { top: 15, right: 25, bottom: 40, left: 40 };
+      const innerWidth = width - margin.left - margin.right;
+      const innerHeight = height - margin.top - margin.bottom;
+      
+      const g = svg.append('g')
+        .attr('transform', `translate(${margin.left},${margin.top})`);
+      
+      const histData = generateHistogramData(selectedRow.vector, numBins);
+      
+      const x = d3.scaleBand()
+        .domain(histData.map(d => d.bin))
+        .range([0, innerWidth])
+        .padding(0.1);
+      
+      const maxCount = d3.max(histData, d => d.count);
+      const y = d3.scaleLinear()
+        .domain([0, maxCount + (maxCount * 0.1)])
+        .range([innerHeight, 0]);
+      
+      const xAxis = g.append('g')
+        .attr('class', 'axis')
+        .attr('transform', `translate(0,${innerHeight})`)
+        .call(d3.axisBottom(x).tickValues(x.domain().filter((d, i) => i % 2 === 0)))
+        .selectAll('text')
+        .style('text-anchor', 'end')
+        .attr('dx', '-.8em')
+        .attr('dy', '.15em')
+        .attr('font-size', '8px')
+        .attr('transform', 'rotate(-45)');
+      
+      const yAxis = g.append('g')
+        .attr('class', 'axis')
+        .call(d3.axisLeft(y).ticks(5));
+      
+      g.append('g')
+        .attr('class', 'grid')
+        .call(d3.axisLeft(y)
+          .ticks(5)
+          .tickSize(-innerWidth)
+          .tickFormat(''));
+      
+      const tooltip = d3.select('#tooltip');
+      
+      g.selectAll('.bar')
+        .data(histData)
+        .enter()
+        .append('rect')
+        .attr('class', 'histogram-bar')
+        .attr('x', d => x(d.bin))
+        .attr('y', d => y(d.count))
+        .attr('width', x.bandwidth())
+        .attr('height', d => innerHeight - y(d.count))
+        .on('mouseover', function(event, d) {
+          tooltip.style('opacity', 1)
+            .html(`
+              Range: ${d.start.toFixed(1)}-${d.end.toFixed(1)}<br>
+              Count: ${d.count} (${(d.frequency * 100).toFixed(1)}%)
+            `)
+            .style('left', (event.pageX + 10) + 'px')
+            .style('top', (event.pageY - 28) + 'px');
+          
+          d3.select(this).style('fill', '#0984e3');
+        })
+        .on('mouseout', function() {
+          tooltip.style('opacity', 0);
+          d3.select(this).style('fill', '#74b9ff');
+        });
+      
+      if (showNormal) {
+        const vector = selectedRow.vector;
+        const min = Math.min(...vector);
+        const max = Math.max(...vector);
+        
+        const normalData = generateNormalCurve(
+          selectedRow.Mean,
+          selectedRow.StdDev,
+          min,
+          max,
+          50
+        );
+        
+        const xCurve = d3.scaleLinear()
+          .domain([min - (max - min) * 0.1, max + (max - min) * 0.1])
+          .range([0, innerWidth]);
+        
+        const maxPDF = d3.max(normalData, d => d.y);
+        const scaleFactor = maxCount / maxPDF;
+        
+        const line = d3.line()
+          .x(d => xCurve(d.x))
+          .y(d => y(d.y * scaleFactor))
+          .curve(d3.curveBasis);
+        
+        g.append('path')
+          .datum(normalData)
+          .attr('class', 'normal-curve')
+          .attr('d', line);
+      }
+      
+      g.append('text')
+        .attr('transform', `translate(${innerWidth / 2}, ${innerHeight + 25})`)
+        .style('text-anchor', 'middle')
+        .attr('fill', 'white')
+        .attr('font-size', '10px')
+        .text(selectedRow.Variable);
+      
+      g.append('text')
+        .attr('transform', 'rotate(-90)')
+        .attr('y', -margin.left + 12)
+        .attr('x', -innerHeight / 2)
+        .attr('dy', '1em')
+        .style('text-anchor', 'middle')
+        .attr('fill', 'white')
+        .attr('font-size', '9px')
+        .text('Freq');
+    }
+
+    // Normality test functions
+    function initializeGaugeChart() {
+      if (window.gaugeChart) return; // Don't reinitialize if it already exists
+      
+      const gaugeChart = Highcharts.chart('gauge-container', {
+        chart: {
+          type: 'gauge',
+          height: 150,
+          backgroundColor: 'transparent',
+          margin: [-23, 0, 20, 0]
+        },
+        title: null,
+        pane: {
+          startAngle: -90,
+          endAngle: 90,
+          center: ['50%', '85%'],
+          size: '130%',
+          background: [{ 
+            outerRadius: '100%', 
+            innerRadius: '98%', 
+            backgroundColor: 'transparent', 
+            borderWidth: 0 
+          }]
+        },
+        yAxis: {
+          min: 0,
+          max: 100,
+          tickPosition: 'inside',
+          tickLength: 8,
+          tickWidth: 1,
+          tickColor: '#666',
+          lineWidth: 0,
+          minorTickInterval: null,
+          labels: {
+            distance: -16,
+            style: {
+              fontSize: '8px'
+            }
+          },
+          plotBands: [
+            { from: 0, to: 40, color: '#e74c3c' },
+            { from: 40, to: 75, color: '#f39c12' },
+            { from: 75, to: 100, color: '#2ecc71' }
+          ]
+        },
+        series: [{
+          name: 'Score',
+          data: [0],
+          tooltip: { valueSuffix: ' / 100' },
+          dataLabels: {
+            format: '{y}',
+            style: { fontSize: '16px', fontWeight: 'bold', color: '#2ecc71'},
+            y: -25
+          },
+          dial: {
+            radius: '85%',
+            backgroundColor: 'white',
+            baseWidth: 3,
+            baseLength: '0%',
+            rearLength: '0%'
+          },
+          pivot: {
+            backgroundColor: 'black',
+            radius: 4
+          }
+        }]
+      });
+      
+      window.gaugeChart = gaugeChart;
+    }
+
+    function loadSampleNormalityData() {
+      // Sample normality test results
+      const sampleResults = [
+        { name: "Shapiro-Wilk", stat: 0.986, pval: 0.234, crit: 0.05 },
+        { name: "Anderson-Darling", stat: 0.412, pval: 0.335, crit: 0.751 },
+        { name: "Kolmogorov-Smirnov", stat: 0.052, pval: 0.173, crit: 0.124 },
+        { name: "Cramer-von Mises", stat: 0.072, pval: 0.261, crit: 0.126 },
+        { name: "D'Agostino-Pearson", stat: 7.842, pval: 0.0198, crit: 0.05 },
+        { name: "Jarque-Bera", stat: 8.126, pval: 0.0172, crit: 0.05 }
+      ];
+      
+      updateNormalityDashboard(sampleResults, 0.05, selectedRow ? selectedRow.N : 120);
+    }
+
+    function updateNormalityDashboard(results, alpha = 0.05, sampleSize = null) {
+      if (!results || !Array.isArray(results) || results.length === 0) {
+        console.warn("Invalid results data received");
+        return;
+      }
+      
+      updateTestCardsFromJSON(results, alpha, sampleSize);
+      updateSummaryStats(results, alpha, sampleSize);
+      calculateNormalityScoreFromJSON(results);
+    }
+
+    function updateTestCardsFromJSON(results, alpha = 0.05, sampleSize = null) {
+      const normalize = str => str.normalize("NFD").replace(/[\s\-\u0300-\u036f'']/g, "").toLowerCase();
+
+      document.querySelectorAll('.test-card').forEach((card) => {
+        const normalizedCardName = card.dataset.test;
+        const match = results.find(r => normalize(r.name) === normalizedCardName);
+
+        if (match) {
+          const detailRows = card.querySelectorAll('.detail-value');
+          if (detailRows.length >= 3) {
+            detailRows[0].textContent = match.stat !== null ? match.stat.toFixed(4) : "—";
+            detailRows[1].textContent = match.pval !== null ? match.pval.toFixed(4) : "—";
+            detailRows[2].textContent = match.crit !== null ? match.crit.toFixed(4) : "—";
+          }
+
+          const badge = card.querySelector('.test-result');
+          if (badge) {
+            badge.style.backgroundColor = '';
+            badge.style.color = '';
+            if (match.pval !== null && match.pval >= alpha) {
+              badge.textContent = 'PASS';
+              badge.classList.remove('fail');
+              badge.classList.add('pass');
+            } else {  
+              badge.textContent = 'FAIL';
+              badge.classList.remove('pass');
+              badge.classList.add('fail');
+            }
+          }
+        }
+      });
+    }
+
+    function updateSummaryStats(results, alpha = 0.05, sampleSize = null) {
+      let pass = 0, fail = 0;
+      results.forEach(r => {
+        if (r.pval !== null && !isNaN(r.pval)) {
+          if (r.pval >= alpha) pass++; else fail++;
+        }
+      });
+
+      document.getElementById("pass-count").textContent = pass;
+      document.getElementById("fail-count").textContent = fail;
+      document.getElementById("sample-size").textContent = sampleSize ?? results.length;
+      document.getElementById("significance").textContent = alpha.toFixed(2);
+      
+      const slider = document.getElementById('alpha-slider');
+      if (slider) {
+        slider.value = alpha;
+      }
+    }
+
+    function calculateNormalityScoreFromJSON(results) {
+      const weights = {
+        "Shapiro-Wilk": 1.0,
+        "Anderson-Darling": 0.9,
+        "Kolmogorov-Smirnov": 0.8,
+        "Cramer-von Mises": 0.7,
+        "D'Agostino-Pearson": 1.0,
+        "Jarque-Bera": 0.9
+      };
+
+      let totalWeight = 0;
+      let weightedScore = 0;
+
+      results.forEach(test => {
+        const p = test.pval;
+        const w = weights[test.name] || 1.0;
+        let score = 0;
+
+        if (p === null || isNaN(p)) return;
+
+        if (p < 0.001) {
+          score = 0;
+        } else if (p < 0.05) {
+          const logScale = Math.log10(p) - Math.log10(0.001);
+          const maxLogScale = Math.log10(0.05) - Math.log10(0.001);
+          score = 10 + (30 * logScale / maxLogScale);
+        } else if (p < 0.5) {
+          const logScale = Math.log10(p) - Math.log10(0.05);
+          const maxLogScale = Math.log10(0.5) - Math.log10(0.05);
+          score = 40 + (40 * logScale / maxLogScale);
+        } else {
+          score = 80 + (20 * (p - 0.5) / 0.5);
+        }
+
+        weightedScore += score * w;
+        totalWeight += w;
+      });
+
+      const finalScore = Math.round(totalWeight > 0 ? weightedScore / totalWeight : 50);
+      updateGauge(finalScore);
+    }
+
+    function updateGauge(score) {
+      if (window.gaugeChart && window.gaugeChart.series && window.gaugeChart.series[0]) {
+        window.gaugeChart.series[0].points[0].update(score);
+      }
+    }
+
+    // VB6 integration functions
+    function injectDataFromVB6(jsonString) {
+      try {
+        const parsedData = JSON.parse(jsonString);
+        data = parsedData;
+        selectedRow = null;
+        document.getElementById('histogram-panel').style.display = 'none';
+        renderTable();
+
+        if (data.length > 0) {
+          handleRowClick(data[0]);
+        }
+      } catch (e) {
+        console.error("Invalid JSON from VB6:", e.message);
+      }
+    }
+
+    
+    // Initialize application
+    function initialize() {
+      data = generateSampleData();
+      if (data.length > 0) {
+        handleRowClick(data[0]);
+      }
+      
+      renderTable();
+      
+      if (data.length > 0) {
+        handleRowClick(data[0]);
+      }
+      
+      // Add event listeners to table headers
+      document.querySelectorAll('th[data-key]').forEach(th => {
+        th.addEventListener('click', () => {
+          requestSort(th.getAttribute('data-key'));
+        });
+      });
+      
+      // Add event listener for bins slider
+      const numBinsSlider = document.getElementById('num-bins');
+      const binsValue = document.getElementById('bins-value');
+      
+      numBinsSlider.addEventListener('input', function() {
+        numBins = parseInt(this.value);
+        binsValue.textContent = numBins;
+        renderHistogram();
+      });
+
+      // Add event listener for decimal places slider
+      const decimalSlider = document.getElementById('decimal-places');
+      const decimalValue = document.getElementById('decimal-value');
+      
+      decimalSlider.addEventListener('input', function() {
+        decimalPlaces = parseInt(this.value);
+        decimalValue.textContent = decimalPlaces;
+        renderTable();
+        updateSummaryTable();
+      });
+      
+      // Add event listener for normal distribution checkbox
+      document.getElementById('show-normal').addEventListener('change', function() {
+        showNormal = this.checked;
+        renderHistogram();
+      });
+      
+      // Add window resize event listener
+      window.addEventListener('resize', () => {
+        if (selectedRow) {
+          renderHistogram();
+        }
+      });
+
+      // Alpha slider handling
+      const alphaSlider = document.getElementById('alpha-slider');
+      if (alphaSlider) {
+        alphaSlider.addEventListener('mouseup', function() {
+          const alpha = parseFloat(this.value).toFixed(2);
+          document.getElementById('significance').textContent = alpha;
+          console.log("Alpha changed to", alpha);
+          // You can send to VB6 here if needed
+          // sendMessageToVB6("Case200", alpha);
+        });
+        
+        alphaSlider.addEventListener('change', function() {
+          document.getElementById('significance').textContent = parseFloat(this.value).toFixed(2);
+        });
+      }
+    }
+
+    // Start the application
+    initialize();
+  </script>
+
+  <script>
+    class DropdownMenu extends HTMLElement {
+      constructor() {
+        super();
+        const shadow = this.attachShadow({ mode: "open" });
+        shadow.innerHTML = `
+          <style>
+            :host { display: block; font-family: Arial; padding-left: 10px; }
+            .header { display: flex; justify-content: space-between; align-items: center; background: #1f1f2f; padding: 20px; }
+            h1 { font-size: 28px; color: rgb(255,192,192); margin: 0; }
+            .dropdown { position: relative; }
+            .dropbtn { background: linear-gradient(to right, rgb(255,192,192), rgb(255,160,160)); color: black; font-weight: bold; border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+            .dropdown-content { margin-top: 5px; position: absolute; top: 100%; left: 10%; transform: translateX(-40%) scaleY(0); background-color: white; color: black; border-radius: 6px; overflow: hidden; box-shadow: 2px 4px 8px rgba(0,0,0,0.4); min-width: 420px; font-size: 14px; column-count: 1; column-gap: 0; opacity: 0; transition: all 0.25s ease-in-out; transform-origin: top; pointer-events: none; z-index: 1000; }
+            .dropdown-content.show { transform: translateX(-40%) scaleY(1); opacity: 1; pointer-events: auto; }
+            .dropdown-content a { padding: 6px 10px; display: flex; align-items: center; text-decoration: none; color: black; transition: background 0.2s ease; }
+            .dropdown-content a:hover { background-color: rgb(255,160,160); color: white; }
+            .dropdown-content a.selected { background-color: rgb(255,160,160); color: white; font-weight: bold; }
+            .dropdown-content a img { width: 20px; height: 20px; object-fit: contain; }
+          </style>
+          <div class="header">
+            <h1 id="title">Correlations</h1>
+            <div class="dropdown">
+              <button class="dropbtn">Select Analysis ▼</button>
+              <div class="dropdown-content">
+                <a href="javascript:void(0)" onclick="sendMessageToVB6('Case00_Pearson', 'Case00_Pearson')">Correlations Table</a> 
+                <a href="javascript:void(0)" onclick="sendMessageToVB6('Case10', 'Case10')">Correlations Map Network</a>   
+                <a href="javascript:void(0)" onclick="sendMessageToVB6('Case20', 'Case20')">Partial Correlations</a>
+                <a href="javascript:void(0)" onclick="sendMessageToVB6('Case30', 'Case30')">Reliabilty Coefficients</a>
+                <a href="javascript:void(0)" onclick="sendMessageToVB6('Case40', 'Case40')">Taylor Diagram</a>
+                <a href="javascript:void(0)">--------------------------------------------------</a>
+                <a href="javascript:void(0)" onclick="sendMessageToVB6('Case60', 'Case60')">Descriptive Statistics</a>
+              </div>
+            </div>
+          </div>
+        `;
+
+        const title = shadow.getElementById("title");
+        const dropdown = shadow.querySelector(".dropdown-content");
+        const btn = shadow.querySelector(".dropbtn");
+
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          dropdown.classList.toggle("show");
+        });
+
+        window.addEventListener("click", () => {
+          dropdown.classList.remove("show");
+        });
+
+        shadow.querySelectorAll("a").forEach(link => {
+          link.addEventListener("click", (e) => {
+            e.preventDefault();
+            const action = link.dataset.action;
+            const label = link.textContent.trim();
+
+            title.textContent = label;
+            dropdown.querySelectorAll("a").forEach(a => a.classList.remove("selected"));
+            link.classList.add("selected");
+            dropdown.classList.remove("show");
+
+            try {
+              if (window.external && window.external.OrdoWebView1_JSMessage) {
+                window.external.OrdoWebView1_JSMessage(action + "|" + label);
+              }
+            } catch (err) {
+              console.warn("VB6 bridge error:", err.message);
+            }
+          });
+        });
+     
+        window.updateHeaderTitle = (newTitle) => {
+          title.textContent = newTitle;
+          dropdown.querySelectorAll("a").forEach(link => {
+            link.classList.remove("selected");
+            if (link.textContent.trim().includes(newTitle.trim())) {
+              link.classList.add("selected");
+            }
+          });
+        };
+      }
+    }
+    customElements.define("dropdown-menu", DropdownMenu);
+  </script>
+
+</body>
+</html>
