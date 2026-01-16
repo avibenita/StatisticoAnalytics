@@ -191,15 +191,133 @@
       margin-bottom: 12px;
       font-size: 1.1rem;
     }
+
+    /* Dropdown Navigation */
+    .dropdown-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .dropdown-btn {
+      background: var(--surface-2);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .dropdown-btn:hover {
+      background: var(--surface-1);
+      border-color: var(--accent-1);
+    }
+
+    .dropdown-arrow {
+      font-size: 10px;
+      transition: transform 0.3s;
+    }
+
+    .dropdown-container.open .dropdown-arrow {
+      transform: rotate(180deg);
+    }
+
+    .dropdown-content {
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      min-width: 220px;
+      display: none;
+      z-index: 1000;
+    }
+
+    .dropdown-container.open .dropdown-content {
+      display: block;
+    }
+
+    .dropdown-content a {
+      display: block;
+      padding: 10px 14px;
+      color: var(--text-primary);
+      text-decoration: none;
+      font-size: 13px;
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+
+    .dropdown-content a:hover {
+      background: var(--surface-1);
+    }
+
+    .dropdown-content a.selected {
+      background: rgba(255, 165, 120, 0.15);
+      color: var(--accent-1);
+      font-weight: 600;
+    }
+
+    .dropdown-separator {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    .nav-icon {
+      margin-right: 8px;
+      width: 16px;
+      display: inline-block;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
   <div class="results-container">
     <div class="header">
-      <h1><i class="fa-solid fa-chart-line"></i> Regression Results</h1>
-      <button class="close-btn" onclick="window.close()">
-        <i class="fa-solid fa-times"></i> Close
-      </button>
+      <h1><i class="fa-solid fa-chart-line"></i> <span id="pageTitle">Regression Results</span></h1>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <div class="dropdown-container" id="navDropdown">
+          <button class="dropdown-btn" id="dropdownBtn" onclick="toggleDropdown()">
+            <i class="fa-solid fa-bars"></i>
+            Analysis Menu
+            <span class="dropdown-arrow">▼</span>
+          </button>
+          <div class="dropdown-content" id="dropdownContent">
+            <a onclick="showView('regression')" class="selected" id="nav-regression">
+              <span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span>Regression Results
+            </a>
+            <a onclick="showView('anova')" id="nav-anova">
+              <span class="nav-icon"><i class="fa-solid fa-table-cells"></i></span>ANOVA
+            </a>
+            <a onclick="showView('residuals')" id="nav-residuals">
+              <span class="nav-icon"><i class="fa-solid fa-chart-scatter"></i></span>Residual Analysis
+            </a>
+            <a onclick="showView('diagnostics')" id="nav-diagnostics">
+              <span class="nav-icon"><i class="fa-solid fa-stethoscope"></i></span>Diagnostics
+            </a>
+            <a onclick="showView('predictions')" id="nav-predictions">
+              <span class="nav-icon"><i class="fa-solid fa-crystal-ball"></i></span>Predictions
+            </a>
+            <div class="dropdown-separator"></div>
+            <a onclick="showView('descriptive')" id="nav-descriptive">
+              <span class="nav-icon"><i class="fa-solid fa-table"></i></span>Descriptive Statistics
+            </a>
+            <a onclick="showView('correlation')" id="nav-correlation">
+              <span class="nav-icon"><i class="fa-solid fa-diagram-project"></i></span>Correlation Analysis
+            </a>
+          </div>
+        </div>
+        <button class="close-btn" onclick="window.close()">
+          <i class="fa-solid fa-times"></i> Close
+        </button>
+      </div>
     </div>
 
     <div id="resultsContent">
@@ -213,13 +331,73 @@
   <script>
     console.log('🔄 Results popup script loaded');
     
+    // Global state
+    let resultsData = null;
+    let currentView = 'regression';
+    
     Office.onReady((info) => {
       console.log('✅ Results popup initialized');
       console.log('📦 Office host:', info.host);
       
       // Load results from localStorage (set by parent taskpane)
       loadResults();
+      
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function(e) {
+        const dropdown = document.getElementById('navDropdown');
+        if (!dropdown.contains(e.target)) {
+          dropdown.classList.remove('open');
+        }
+      });
     });
+    
+    function toggleDropdown() {
+      document.getElementById('navDropdown').classList.toggle('open');
+    }
+    
+    function showView(viewName) {
+      console.log('📄 Switching to view:', viewName);
+      currentView = viewName;
+      
+      // Update selected menu item
+      document.querySelectorAll('.dropdown-content a').forEach(a => a.classList.remove('selected'));
+      document.getElementById('nav-' + viewName).classList.add('selected');
+      
+      // Close dropdown
+      document.getElementById('navDropdown').classList.remove('open');
+      
+      // Update title and display appropriate view
+      switch(viewName) {
+        case 'regression':
+          document.getElementById('pageTitle').textContent = 'Regression Results';
+          if (resultsData) displayResults(resultsData);
+          break;
+        case 'anova':
+          document.getElementById('pageTitle').textContent = 'ANOVA';
+          if (resultsData) displayANOVAView(resultsData);
+          break;
+        case 'residuals':
+          document.getElementById('pageTitle').textContent = 'Residual Analysis';
+          displayResidualView(resultsData);
+          break;
+        case 'diagnostics':
+          document.getElementById('pageTitle').textContent = 'Diagnostics';
+          displayDiagnosticsView(resultsData);
+          break;
+        case 'predictions':
+          document.getElementById('pageTitle').textContent = 'Predictions';
+          displayPredictionsView(resultsData);
+          break;
+        case 'descriptive':
+          document.getElementById('pageTitle').textContent = 'Descriptive Statistics';
+          displayDescriptiveView(resultsData);
+          break;
+        case 'correlation':
+          document.getElementById('pageTitle').textContent = 'Correlation Analysis';
+          displayCorrelationView(resultsData);
+          break;
+      }
+    }
 
     function loadResults() {
       console.log('🔍 Looking for results in localStorage...');
@@ -230,12 +408,12 @@
       if (resultsJSON) {
         console.log('✅ Found results in localStorage!');
         try {
-          const resultsData = JSON.parse(resultsJSON);
+          resultsData = JSON.parse(resultsJSON);
           console.log('📊 Parsed results:', resultsData);
           displayResults(resultsData);
-          // Clear after loading
-          localStorage.removeItem('regressionResults');
-          console.log('🧹 Cleared localStorage');
+          // Don't clear - keep for view switching
+          // localStorage.removeItem('regressionResults');
+          console.log('💾 Results cached for view switching');
         } catch (e) {
           console.error('❌ Error parsing results:', e);
           showError('Failed to load results: ' + e.message);
@@ -399,6 +577,163 @@
         <div class="loading">
           <i class="fa-solid fa-exclamation-triangle" style="font-size: 40px; color: #ff6b6b; margin-bottom: 16px;"></i>
           <div style="color: #ff6b6b;">${message}</div>
+        </div>
+      `;
+    }
+
+    // ============================================================================
+    // ADDITIONAL VIEWS
+    // ============================================================================
+    
+    function displayANOVAView(data) {
+      if (!data) return;
+      const { anovaTable } = data;
+      
+      const html = `
+        <div class="table-container">
+          <div class="table-heading"><i class="fa-solid fa-table-cells"></i> Analysis of Variance (ANOVA)</div>
+          <table class="regression-table">
+            <thead>
+              <tr>
+                <th>Source</th>
+                <th>Sum of Squares</th>
+                <th>df</th>
+                <th>Mean Square</th>
+                <th>F</th>
+                <th>Pr(>F)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Model</strong></td>
+                <td>${anovaTable.model.ss}</td>
+                <td>${anovaTable.model.df}</td>
+                <td>${anovaTable.model.ms}</td>
+                <td>${anovaTable.model.f}</td>
+                <td>${anovaTable.model.pValue}</td>
+              </tr>
+              <tr>
+                <td><strong>Residual</strong></td>
+                <td>${anovaTable.residual.ss}</td>
+                <td>${anovaTable.residual.df}</td>
+                <td>${anovaTable.residual.ms}</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+              <tr style="border-top: 2px solid var(--border); font-weight: bold;">
+                <td><strong>Total</strong></td>
+                <td>${anovaTable.total.ss}</td>
+                <td>${anovaTable.total.df}</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="padding: 20px; background: var(--surface-1); border-radius: 8px; margin-top: 20px;">
+          <h3 style="color: var(--accent-1); margin-top: 0;">Interpretation</h3>
+          <p style="color: var(--text-secondary); line-height: 1.6;">
+            <strong>F-statistic:</strong> ${anovaTable.model.f}<br>
+            <strong>P-value:</strong> ${anovaTable.model.pValue}<br><br>
+            ${parseFloat(anovaTable.model.pValue) < 0.05 || anovaTable.model.pValue === '<0.0001'
+              ? '✅ The model is <strong style="color: var(--accent-3);">statistically significant</strong> (p < 0.05). At least one predictor has a significant effect on the response variable.'
+              : '❌ The model is <strong style="color: #ff6b6b;">not statistically significant</strong> (p ≥ 0.05). The predictors do not significantly explain variation in the response.'
+            }
+          </p>
+        </div>
+      `;
+      
+      document.getElementById('resultsContent').innerHTML = html;
+    }
+
+    function displayResidualView(data) {
+      document.getElementById('resultsContent').innerHTML = `
+        <div class="loading">
+          <i class="fa-solid fa-chart-scatter" style="font-size: 40px; color: var(--accent-2); margin-bottom: 16px;"></i>
+          <h3 style="color: var(--accent-1);">Residual Analysis</h3>
+          <p style="color: var(--text-secondary); max-width: 600px; margin: 16px auto;">
+            Residual plots and diagnostics will be displayed here.<br>
+            <em>This feature requires the raw residuals data which will be added in the next update.</em>
+          </p>
+          <div style="margin-top: 24px;">
+            <button onclick="showView('regression')" class="close-btn">
+              <i class="fa-solid fa-arrow-left"></i> Back to Results
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function displayDiagnosticsView(data) {
+      document.getElementById('resultsContent').innerHTML = `
+        <div class="loading">
+          <i class="fa-solid fa-stethoscope" style="font-size: 40px; color: var(--accent-2); margin-bottom: 16px;"></i>
+          <h3 style="color: var(--accent-1);">Diagnostics</h3>
+          <p style="color: var(--text-secondary); max-width: 600px; margin: 16px auto;">
+            Model diagnostics including VIF, Durbin-Watson, Cook's D, and leverage statistics will be displayed here.<br>
+            <em>Advanced diagnostics coming soon!</em>
+          </p>
+          <div style="margin-top: 24px;">
+            <button onclick="showView('regression')" class="close-btn">
+              <i class="fa-solid fa-arrow-left"></i> Back to Results
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function displayPredictionsView(data) {
+      document.getElementById('resultsContent').innerHTML = `
+        <div class="loading">
+          <i class="fa-solid fa-crystal-ball" style="font-size: 40px; color: var(--accent-2); margin-bottom: 16px;"></i>
+          <h3 style="color: var(--accent-1);">Predictions</h3>
+          <p style="color: var(--text-secondary); max-width: 600px; margin: 16px auto;">
+            Make predictions using the fitted model with new input values.<br>
+            <em>Prediction calculator coming soon!</em>
+          </p>
+          <div style="margin-top: 24px;">
+            <button onclick="showView('regression')" class="close-btn">
+              <i class="fa-solid fa-arrow-left"></i> Back to Results
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function displayDescriptiveView(data) {
+      document.getElementById('resultsContent').innerHTML = `
+        <div class="loading">
+          <i class="fa-solid fa-table" style="font-size: 40px; color: var(--accent-2); margin-bottom: 16px;"></i>
+          <h3 style="color: var(--accent-1);">Descriptive Statistics</h3>
+          <p style="color: var(--text-secondary); max-width: 600px; margin: 16px auto;">
+            Descriptive statistics for all variables in the model.<br>
+            <em>This feature requires the raw data which will be added in the next update.</em>
+          </p>
+          <div style="margin-top: 24px;">
+            <button onclick="showView('regression')" class="close-btn">
+              <i class="fa-solid fa-arrow-left"></i> Back to Results
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function displayCorrelationView(data) {
+      document.getElementById('resultsContent').innerHTML = `
+        <div class="loading">
+          <i class="fa-solid fa-diagram-project" style="font-size: 40px; color: var(--accent-2); margin-bottom: 16px;"></i>
+          <h3 style="color: var(--accent-1);">Correlation Analysis</h3>
+          <p style="color: var(--text-secondary); max-width: 600px; margin: 16px auto;">
+            Correlation matrix and scatter plots for all variables.<br>
+            <em>This feature requires the raw data which will be added in the next update.</em>
+          </p>
+          <div style="margin-top: 24px;">
+            <button onclick="showView('regression')" class="close-btn">
+              <i class="fa-solid fa-arrow-left"></i> Back to Results
+            </button>
+          </div>
         </div>
       `;
     }
