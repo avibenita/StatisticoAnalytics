@@ -451,6 +451,54 @@
       gap: 6px;
     }
 
+    /* Range Options - 3 Panels in Row */
+    .range-option {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface-0);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .range-option-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      background: linear-gradient(135deg, rgba(120, 200, 255, 0.15), rgba(120, 200, 255, 0.05));
+      border-bottom: 1px solid rgba(120, 200, 255, 0.3);
+    }
+
+    .range-option-number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      background: var(--accent-2);
+      color: #000;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .range-option-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent-2);
+    }
+
+    .range-option-content {
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+    }
+
     .bucket-count {
       background: var(--surface-1);
       padding: 2px 8px;
@@ -1266,29 +1314,48 @@
             <i class="fa-solid fa-database"></i> Pick Data Range
           </div>
           
-          <!-- Named Ranges -->
-          <div style="margin-bottom: 12px;">
-            <label style="font-size: 11px; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 4px;">📊 Named Ranges</label>
-            <select id="rangeSelector" onchange="loadFromNamedRange()">
-              <option value="">-- Select Named Range --</option>
-            </select>
-          </div>
-
-          <!-- Manual Selection -->
-          <div style="background: var(--surface-0); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 12px;">
-            <div style="font-size: 11px; color: var(--text-secondary); font-weight: 600; margin-bottom: 8px;">
-              📍 Or Select Cells in Excel
+          <!-- 3 Options in One Row -->
+          <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            
+            <!-- Option 1: Named Ranges -->
+            <div class="range-option">
+              <div class="range-option-header">
+                <span class="range-option-number">1</span>
+                <span class="range-option-title">Named Range</span>
+              </div>
+              <div class="range-option-content">
+                <select id="rangeSelector" onchange="loadFromNamedRange()" style="width: 100%; font-size: 11px;">
+                  <option value="">-- Select --</option>
+                </select>
+              </div>
             </div>
             
-            <!-- Action buttons -->
-            <div style="display: flex; gap: 6px;">
-              <button class="btn alt" onclick="autoDetectRange()" style="flex: 1;">
-                <i class="fa-solid fa-magic"></i> Auto-detect
-              </button>
-              <button id="btnUseSelection" class="btn" onclick="useSelection()" style="flex: 2; background: linear-gradient(135deg, var(--accent-2), #4CAF50);" disabled>
-                <i class="fa-solid fa-check"></i> Use Selection
-              </button>
+            <!-- Option 2: Auto-detect -->
+            <div class="range-option">
+              <div class="range-option-header">
+                <span class="range-option-number">2</span>
+                <span class="range-option-title">Auto-detect</span>
+              </div>
+              <div class="range-option-content">
+                <button class="btn alt" onclick="autoDetectRange()" style="width: 100%; padding: 8px; font-size: 11px;">
+                  <i class="fa-solid fa-magic"></i> Used Range
+                </button>
+              </div>
             </div>
+            
+            <!-- Option 3: Manual Selection -->
+            <div class="range-option">
+              <div class="range-option-header">
+                <span class="range-option-number">3</span>
+                <span class="range-option-title">Select Cells</span>
+              </div>
+              <div class="range-option-content">
+                <button id="btnUseSelection" class="btn" onclick="useSelection()" style="width: 100%; padding: 8px; font-size: 11px; background: linear-gradient(135deg, var(--accent-2), #4CAF50);" disabled>
+                  <i class="fa-solid fa-check"></i> Use Selection
+                </button>
+              </div>
+            </div>
+            
           </div>
           
           <!-- Unified Range Display -->
