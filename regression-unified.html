@@ -718,9 +718,9 @@
                 <tr>
                   <th style="width: 30px;"></th>
                   <th>VARIABLE</th>
-                  <th class="center" style="width: 50px;" title="Total observations">N</th>
-                  <th class="center" style="width: 50px;" title="Numeric values">nNum</th>
-                  <th class="center" style="width: 50px;" title="Categories">nCat</th>
+                  <th class="center" style="width: 50px;" title="Total valid observations">N</th>
+                  <th class="center" style="width: 50px;" title="Number of numeric observations">nNum</th>
+                  <th class="center" style="width: 50px;" title="Number of categorical (non-numeric) observations">nCat</th>
                   <th class="center" style="width: 150px;">ASSIGN TO</th>
                 </tr>
               </thead>
@@ -1117,20 +1117,28 @@
         const columnData = dataRows.map(row => row[colIdx]);
         const validData = columnData.filter(val => val !== null && val !== undefined && val !== '');
         
-        // Count numeric vs non-numeric values
-        const numericData = validData.filter(val => {
+        // Count numeric vs non-numeric (categorical) observations
+        let numericCount = 0;
+        let categoricalCount = 0;
+        
+        validData.forEach(val => {
           const num = Number(val);
-          return !isNaN(num);
+          if (!isNaN(num)) {
+            numericCount++;
+          } else {
+            categoricalCount++;
+          }
         });
         
-        // Get unique values for category count
+        // Get unique values for reference
         const uniqueValues = [...new Set(validData)];
         
         return {
           name: header || `Column${colIdx + 1}`,
           n: validData.length,
-          nNum: numericData.length,
-          nCat: uniqueValues.length,
+          nNum: numericCount,
+          nCat: categoricalCount,
+          nUnique: uniqueValues.length, // Store unique count for later use
           data: columnData,
           colIdx: colIdx
         };
@@ -1170,26 +1178,27 @@
         tdN.style.color = 'var(--text-secondary)';
         tr.appendChild(tdN);
         
-        // nNum (numeric count)
+        // nNum (numeric observations count)
         const tdNNum = document.createElement('td');
         tdNNum.textContent = variable.nNum;
         tdNNum.style.textAlign = 'center';
         tdNNum.style.fontWeight = '600';
+        // Blue if all numeric, gray if mixed or none
         tdNNum.style.color = variable.nNum === variable.n ? 'var(--accent-2)' : 'var(--text-muted)';
         tr.appendChild(tdNNum);
         
-        // nCat (unique categories)
+        // nCat (categorical/non-numeric observations count)
         const tdNCat = document.createElement('td');
         tdNCat.textContent = variable.nCat;
         tdNCat.style.textAlign = 'center';
         tdNCat.style.fontWeight = '600';
-        // Color based on category count: few = good for categorical, many = numeric
-        if (variable.nCat <= 10) {
-          tdNCat.style.color = 'var(--accent-3)'; // Green - good for categorical
-        } else if (variable.nCat <= 20) {
-          tdNCat.style.color = 'var(--accent-1)'; // Orange - borderline
+        // Green if has categorical data, gray if pure numeric
+        if (variable.nCat > 0 && variable.nUnique <= 10) {
+          tdNCat.style.color = 'var(--accent-3)'; // Green - has categorical data with few unique values
+        } else if (variable.nCat > 0) {
+          tdNCat.style.color = 'var(--accent-1)'; // Orange - has categorical but many unique
         } else {
-          tdNCat.style.color = 'var(--text-muted)'; // Gray - too many for categorical
+          tdNCat.style.color = 'var(--text-muted)'; // Gray - no categorical data
         }
         tr.appendChild(tdNCat);
         
