@@ -965,6 +965,124 @@
       font-weight: 600;
     }
 
+    /* Variables Assignment Modal */
+    .vars-assign-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      background: var(--surface-1);
+      border: 2px solid var(--accent-3);
+      border-radius: 10px;
+      width: 90vw;
+      max-width: 800px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      z-index: 2001;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+    }
+
+    .vars-assign-modal.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .vars-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, var(--accent-3), #4CAF50);
+      color: #000;
+      font-size: 16px;
+      font-weight: 700;
+      border-radius: 8px 8px 0 0;
+      flex-shrink: 0;
+    }
+
+    .close-modal-btn {
+      background: rgba(0, 0, 0, 0.2);
+      border: none;
+      color: #000;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      font-size: 16px;
+    }
+
+    .close-modal-btn:hover {
+      background: rgba(0, 0, 0, 0.3);
+      transform: scale(1.1);
+    }
+
+    .vars-modal-info {
+      display: flex;
+      gap: 20px;
+      padding: 12px 20px;
+      background: var(--surface-0);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .info-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .info-row i {
+      font-size: 14px;
+      color: var(--accent-3);
+    }
+
+    .vars-modal-content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 16px 20px;
+      min-height: 300px;
+    }
+
+    .vars-modal-content::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .vars-modal-content::-webkit-scrollbar-track {
+      background: var(--surface-0);
+      border-radius: 5px;
+    }
+
+    .vars-modal-content::-webkit-scrollbar-thumb {
+      background: var(--accent-3);
+      border-radius: 5px;
+    }
+
+    .vars-modal-content::-webkit-scrollbar-thumb:hover {
+      background: #4CAF50;
+    }
+
+    .vars-modal-footer {
+      display: flex;
+      gap: 10px;
+      padding: 16px 20px;
+      background: var(--surface-0);
+      border-top: 1px solid var(--border);
+      border-radius: 0 0 8px 8px;
+      flex-shrink: 0;
+    }
+
     .tooltip-title {
       color: var(--accent-1);
       font-weight: 700;
@@ -1118,33 +1236,16 @@
           </div>
         </div>
 
-        <!-- Variables List Panel -->
-        <div class="panel-section variables-panel">
-          <div class="section-title">
-            <i class="fa-solid fa-list"></i> Available Variables
-          </div>
-
-          <div class="variables-table-container">
-            <table class="variables-table">
-              <thead>
-                <tr>
-                  <th style="width: 30px;"></th>
-                  <th>VARIABLE</th>
-                  <th class="center" style="width: 50px;" title="Total valid observations">N</th>
-                  <th class="center" style="width: 50px;" title="Number of numeric observations">nNum</th>
-                  <th class="center" style="width: 50px;" title="Number of categorical (non-numeric) observations">nCat</th>
-                  <th class="center" style="width: 150px;">ASSIGN TO</th>
-                </tr>
-              </thead>
-              <tbody id="variablesBody">
-                <tr>
-                  <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-muted);">
-                    No data loaded. Select a range above.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        <!-- Variables Assignment Button -->
+        <div class="panel-section" style="padding: 0;">
+          <button class="btn" onclick="openVariablesAssignment()" style="width: 100%; background: linear-gradient(135deg, var(--accent-3), #4CAF50); font-size: 13px; padding: 14px; display: flex; align-items: center; justify-content: space-between;">
+            <span>
+              <i class="fa-solid fa-list"></i> <strong>Variables Assignment</strong>
+            </span>
+            <span id="varsAssignSummary" style="font-size: 11px; opacity: 0.9;">
+              Click to assign variables
+            </span>
+          </button>
         </div>
 
         <!-- Maximum Usable Cases -->
@@ -1379,6 +1480,64 @@
   <!-- Warning Modal for Xc with many categories -->
   <div id="warningOverlay" class="var-stats-overlay"></div>
   <div id="warningModal" class="warning-modal"></div>
+
+  <!-- Variables Assignment Modal -->
+  <div id="varsAssignOverlay" class="var-stats-overlay" onclick="closeVariablesAssignment()"></div>
+  <div id="varsAssignModal" class="vars-assign-modal">
+    <div class="vars-modal-header">
+      <div>
+        <i class="fa-solid fa-list"></i> <strong>Variables Assignment</strong>
+      </div>
+      <button class="close-modal-btn" onclick="closeVariablesAssignment()" title="Close">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="vars-modal-info">
+      <div class="info-row">
+        <i class="fa-solid fa-database"></i>
+        <span><strong>Variables Loaded:</strong> <span id="modalVarCount">0</span></span>
+      </div>
+      <div class="info-row">
+        <i class="fa-solid fa-check-circle" style="color: var(--accent-3);"></i>
+        <span><strong>Assigned:</strong> <span id="modalAssignedCount">0</span></span>
+      </div>
+      <div class="info-row">
+        <i class="fa-solid fa-chart-line" style="color: var(--accent-2);"></i>
+        <span><strong>Observations to use:</strong> <span id="modalObsCount" style="color: var(--accent-2); font-weight: 700;">--</span></span>
+      </div>
+    </div>
+
+    <div class="vars-modal-content">
+      <div class="variables-table-container">
+        <table class="variables-table">
+          <thead>
+            <tr>
+              <th style="width: 30px;"></th>
+              <th>VARIABLE</th>
+              <th class="center" style="width: 50px;" title="Total valid observations">N</th>
+              <th class="center" style="width: 50px;" title="Number of numeric observations">nNum</th>
+              <th class="center" style="width: 50px;" title="Number of categorical (non-numeric) observations">nCat</th>
+              <th class="center" style="width: 150px;">ASSIGN TO</th>
+            </tr>
+          </thead>
+          <tbody id="variablesBody">
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-muted);">
+                No data loaded. Select a range first.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="vars-modal-footer">
+      <button class="btn alt" onclick="closeVariablesAssignment()" style="flex: 1;">
+        <i class="fa-solid fa-check"></i> Done
+      </button>
+    </div>
+  </div>
 
   <script>
     // ============================================================================
@@ -1616,6 +1775,7 @@
       // Render variables table
       renderVariablesTable();
       updateMaxCases();
+      updateVariablesAssignmentInfo();
       showStatus('success', `✓ Loaded ${headers.length} variables from ${address}`, 'left');
     }
 
@@ -1905,6 +2065,88 @@
       overlay.classList.remove('show');
     }
     
+    // ============================================================================
+    // VARIABLES ASSIGNMENT MODAL
+    // ============================================================================
+    function openVariablesAssignment() {
+      const modal = document.getElementById('varsAssignModal');
+      const overlay = document.getElementById('varsAssignOverlay');
+      
+      // Update counts before showing
+      updateVariablesAssignmentInfo();
+      
+      modal.classList.add('show');
+      overlay.classList.add('show');
+    }
+    
+    function closeVariablesAssignment() {
+      const modal = document.getElementById('varsAssignModal');
+      const overlay = document.getElementById('varsAssignOverlay');
+      modal.classList.remove('show');
+      overlay.classList.remove('show');
+    }
+    
+    function updateVariablesAssignmentInfo() {
+      // Update modal counts
+      const varCount = STATE.variables.length;
+      const assignedCount = (STATE.assignments.y ? 1 : 0) + 
+                            STATE.assignments.xn.length + 
+                            STATE.assignments.xc.length;
+      
+      document.getElementById('modalVarCount').textContent = varCount;
+      document.getElementById('modalAssignedCount').textContent = assignedCount;
+      
+      // Calculate observations that will be used
+      const obsCount = calculateUsableObservations();
+      document.getElementById('modalObsCount').textContent = obsCount;
+      
+      // Update button summary
+      const btnSummary = document.getElementById('varsAssignSummary');
+      if (varCount === 0) {
+        btnSummary.textContent = 'Click to assign variables';
+      } else if (assignedCount === 0) {
+        btnSummary.textContent = `${varCount} vars loaded - none assigned`;
+      } else {
+        btnSummary.textContent = `${assignedCount}/${varCount} assigned • ${obsCount} obs`;
+      }
+    }
+    
+    function calculateUsableObservations() {
+      if (!STATE.assignments.y && STATE.assignments.xn.length === 0 && STATE.assignments.xc.length === 0) {
+        return '--';
+      }
+      
+      // Get all assigned variables
+      const assignedVars = [];
+      if (STATE.assignments.y) assignedVars.push(STATE.assignments.y);
+      assignedVars.push(...STATE.assignments.xn);
+      assignedVars.push(...STATE.assignments.xc);
+      
+      if (assignedVars.length === 0) return '--';
+      
+      // Find corresponding variable objects
+      const varObjects = assignedVars.map(name => 
+        STATE.variables.find(v => v.name === name)
+      ).filter(v => v);
+      
+      if (varObjects.length === 0) return '--';
+      
+      // Count observations where ALL assigned variables have valid data
+      const maxRows = Math.max(...varObjects.map(v => v.data.length));
+      let validCount = 0;
+      
+      for (let i = 0; i < maxRows; i++) {
+        const allValid = varObjects.every(v => {
+          if (i >= v.data.length) return false;
+          const val = v.data[i];
+          return val !== null && val !== undefined && val !== '';
+        });
+        if (allValid) validCount++;
+      }
+      
+      return validCount;
+    }
+    
     function toggleCategoryCheckbox(checkboxId) {
       const checkbox = document.getElementById(checkboxId);
       if (checkbox) {
@@ -2012,6 +2254,7 @@
       renderVariablesTable();
       updateBucketDisplay();
       updateMaxCases();
+      updateVariablesAssignmentInfo(); // Update modal info in real-time
     }
     
     function removeVariableFromAllAssignments(varName) {
@@ -2570,13 +2813,15 @@
       STATE.assignments = { y: null, xn: [], xc: [] };
       STATE.currentRange = null;
       STATE.rawData = {};
+      STATE.selectedCategories = {};
       
-      document.getElementById('variablesBody').innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-muted);">No data loaded. Select a range above.</td></tr>';
+      document.getElementById('variablesBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-muted);">No data loaded. Select a range above.</td></tr>';
       document.getElementById('rangeDisplay').style.display = 'none';
       document.getElementById('rangeSelector').value = '';
       document.getElementById('maxCases').textContent = '--';
       
       updateBucketDisplay();
+      updateVariablesAssignmentInfo();
       showStatus('info', 'All data cleared', 'left');
     }
 
