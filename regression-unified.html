@@ -355,108 +355,118 @@
     }
 
     /* Bucket Tabs */
-    .bucket-tabs {
-      display: flex;
+    /* Bucket Containers - Always Visible */
+    .bucket-container {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
       background: var(--surface-0);
+    }
+
+    .bucket-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
       border-bottom: 1px solid var(--border);
     }
 
-    .bucket-tab {
-      flex: 1;
-      padding: 10px;
-      background: transparent;
-      border: none;
-      color: var(--text-secondary);
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      border-bottom: 2px solid transparent;
+    .bucket-header.y-header {
+      background: linear-gradient(135deg, rgba(255, 165, 120, 0.15), rgba(255, 165, 120, 0.05));
+      color: var(--accent-1);
+      border-bottom-color: rgba(255, 165, 120, 0.3);
     }
 
-    .bucket-tab.active {
-      color: var(--text-primary);
+    .bucket-header.xn-header {
+      background: linear-gradient(135deg, rgba(120, 200, 255, 0.15), rgba(120, 200, 255, 0.05));
+      color: var(--accent-2);
+      border-bottom-color: rgba(120, 200, 255, 0.3);
     }
 
-    .bucket-tab.y-tab.active {
-      border-bottom-color: var(--accent-1);
+    .bucket-header.xc-header {
+      background: linear-gradient(135deg, rgba(152, 195, 121, 0.15), rgba(152, 195, 121, 0.05));
+      color: var(--accent-3);
+      border-bottom-color: rgba(152, 195, 121, 0.3);
     }
 
-    .bucket-tab.xn-tab.active {
-      border-bottom-color: var(--accent-2);
-    }
-
-    .bucket-tab.xc-tab.active {
-      border-bottom-color: var(--accent-3);
-    }
-
-    .tab-count {
-      font-size: 10px;
-      opacity: 0.7;
-    }
-
-    /* Drop Zones */
-    .bucket-panel {
-      padding: 10px;
-      min-height: 150px;
-    }
-
-    .drop-zone {
-      min-height: 120px;
-      border: 2px dashed var(--border);
-      border-radius: 6px;
-      padding: 10px;
+    .bucket-title {
       display: flex;
-      flex-direction: column;
+      align-items: center;
       gap: 6px;
     }
 
-    .drop-zone.y-zone {
-      border-color: rgba(255, 165, 120, 0.3);
+    .bucket-count {
+      background: var(--surface-1);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .bucket-content {
+      padding: 8px;
+      min-height: 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .bucket-content.y-content {
       background: rgba(255, 165, 120, 0.02);
     }
 
-    .drop-zone.xn-zone {
-      border-color: rgba(120, 200, 255, 0.3);
+    .bucket-content.xn-content {
       background: rgba(120, 200, 255, 0.02);
     }
 
-    .drop-zone.xc-zone {
-      border-color: rgba(152, 195, 121, 0.3);
+    .bucket-content.xc-content {
       background: rgba(152, 195, 121, 0.02);
     }
 
-    .drop-zone-placeholder {
+    .bucket-empty {
       text-align: center;
       color: var(--text-muted);
-      font-size: 12px;
-      padding: 40px 10px;
+      font-size: 11px;
+      font-style: italic;
+      padding: 20px 10px;
+      opacity: 0.6;
     }
 
     .assigned-var-chip {
-      background: var(--surface-0);
+      background: var(--surface-1);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 10px;
+      border-radius: 4px;
+      padding: 6px 8px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 12px;
+      font-size: 11px;
+      transition: all 0.2s;
+    }
+
+    .assigned-var-chip:hover {
+      background: var(--surface-2);
+      border-color: var(--accent-3);
     }
 
     .assigned-var-chip .remove-btn {
       background: rgba(255, 107, 107, 0.2);
       color: #ff6b6b;
       border: none;
-      border-radius: 4px;
-      padding: 2px 6px;
+      border-radius: 3px;
+      padding: 2px 5px;
       cursor: pointer;
       font-size: 10px;
       font-weight: 700;
+      transition: all 0.2s;
+      margin-left: 8px;
     }
 
     .assigned-var-chip .remove-btn:hover {
-      background: rgba(255, 107, 107, 0.4);
+      background: rgba(255, 107, 107, 0.5);
+      transform: scale(1.1);
     }
 
     /* Stats Container (Right Panel) */
@@ -1256,53 +1266,48 @@
           </div>
         </div>
 
-        <!-- Model Assignment Panel (3 Buckets) -->
+        <!-- Model Assignment Panel (3 Buckets - Always Visible) -->
         <div class="panel-section" style="padding: 0; display: flex; flex-direction: column;">
           <div class="section-title" style="padding: 10px; margin: 0; border-bottom: 1px solid var(--border);">
             <i class="fa-solid fa-chart-line"></i> Model Assignment
           </div>
           
-          <!-- Tabs -->
-          <div class="bucket-tabs">
-            <button class="bucket-tab y-tab active" onclick="switchBucketTab('y')" data-tab="y">
-              <span>Y (Response) <span class="tab-count" id="countY">(0)</span></span>
-            </button>
-            <button class="bucket-tab xn-tab" onclick="switchBucketTab('xn')" data-tab="xn">
-              <span>X (numeric) <span class="tab-count" id="countXn">(0)</span></span>
-            </button>
-            <button class="bucket-tab xc-tab" onclick="switchBucketTab('xc')" data-tab="xc">
-              <span>X (Categ.) <span class="tab-count" id="countXc">(0)</span></span>
-            </button>
-          </div>
-          
-          <!-- Tab Panels -->
-          <div style="flex: 1; position: relative; min-height: 150px;">
-            <!-- Y Panel -->
-            <div class="bucket-panel active" id="panelY">
-              <div class="drop-zone y-zone" id="zoneY">
-                <div class="drop-zone-placeholder">
-                  🟠 Assign a numeric variable as Y (dependent variable)
-                </div>
+          <!-- All 3 Buckets Stacked Vertically -->
+          <div style="display: flex; flex-direction: column; gap: 10px; padding: 10px;">
+            
+            <!-- Y Bucket -->
+            <div class="bucket-container">
+              <div class="bucket-header y-header">
+                <span class="bucket-title"><i class="fa-solid fa-bullseye"></i> Y (Response)</span>
+                <span class="bucket-count" id="countY">0</span>
+              </div>
+              <div class="bucket-content y-content" id="zoneY">
+                <div class="bucket-empty">None</div>
               </div>
             </div>
             
-            <!-- Xn Panel -->
-            <div class="bucket-panel" id="panelXn" style="display: none;">
-              <div class="drop-zone xn-zone" id="zoneXn">
-                <div class="drop-zone-placeholder">
-                  🔵 Assign numeric independent variables
-                </div>
+            <!-- Xn Bucket -->
+            <div class="bucket-container">
+              <div class="bucket-header xn-header">
+                <span class="bucket-title"><i class="fa-solid fa-hashtag"></i> X (numeric)</span>
+                <span class="bucket-count" id="countXn">0</span>
+              </div>
+              <div class="bucket-content xn-content" id="zoneXn">
+                <div class="bucket-empty">None</div>
               </div>
             </div>
             
-            <!-- Xc Panel -->
-            <div class="bucket-panel" id="panelXc" style="display: none;">
-              <div class="drop-zone xc-zone" id="zoneXc">
-                <div class="drop-zone-placeholder">
-                  🟢 Assign categorical variables
-                </div>
+            <!-- Xc Bucket -->
+            <div class="bucket-container">
+              <div class="bucket-header xc-header">
+                <span class="bucket-title"><i class="fa-solid fa-tags"></i> X (Categ.)</span>
+                <span class="bucket-count" id="countXc">0</span>
+              </div>
+              <div class="bucket-content xc-content" id="zoneXc">
+                <div class="bucket-empty">None</div>
               </div>
             </div>
+            
           </div>
           
           <!-- Actions -->
@@ -2278,34 +2283,44 @@
 
     function updateBucketDisplay() {
       // Update counts
-      document.getElementById('countY').textContent = `(${STATE.assignments.y ? 1 : 0})`;
-      document.getElementById('countXn').textContent = `(${STATE.assignments.xn.length})`;
-      document.getElementById('countXc').textContent = `(${STATE.assignments.xc.length})`;
+      document.getElementById('countY').textContent = STATE.assignments.y ? 1 : 0;
+      document.getElementById('countXn').textContent = STATE.assignments.xn.length;
+      document.getElementById('countXc').textContent = STATE.assignments.xc.length;
       
-      // Update drop zones
-      updateDropZone('zoneY', STATE.assignments.y ? [STATE.assignments.y] : [], 'y');
-      updateDropZone('zoneXn', STATE.assignments.xn, 'xn');
-      updateDropZone('zoneXc', STATE.assignments.xc, 'xc');
+      // Update bucket contents
+      updateBucketContent('zoneY', STATE.assignments.y ? [STATE.assignments.y] : [], 'y');
+      updateBucketContent('zoneXn', STATE.assignments.xn, 'xn');
+      updateBucketContent('zoneXc', STATE.assignments.xc, 'xc');
     }
 
-    function updateDropZone(zoneId, variables, bucket) {
+    function updateBucketContent(zoneId, variables, bucket) {
       const zone = document.getElementById(zoneId);
       zone.innerHTML = '';
       
       if (variables.length === 0) {
-        const placeholder = document.createElement('div');
-        placeholder.className = 'drop-zone-placeholder';
-        placeholder.textContent = bucket === 'y' ? '🟠 Assign a numeric variable as Y (dependent variable)' :
-                                  bucket === 'xn' ? '🔵 Assign numeric independent variables' :
-                                  '🟢 Assign categorical variables';
-        zone.appendChild(placeholder);
+        const empty = document.createElement('div');
+        empty.className = 'bucket-empty';
+        empty.textContent = 'None';
+        zone.appendChild(empty);
       } else {
         variables.forEach(varName => {
           const chip = document.createElement('div');
           chip.className = 'assigned-var-chip';
+          
+          // Check if this variable has custom category selection
+          const variable = STATE.variables.find(v => v.name === varName);
+          const hasCustomSelection = STATE.selectedCategories[varName];
+          let displayName = varName;
+          
+          if (hasCustomSelection && variable) {
+            const selectedCount = hasCustomSelection.length;
+            const totalCount = variable.nUnique;
+            displayName = `${varName} (${selectedCount}/${totalCount} cats)`;
+          }
+          
           chip.innerHTML = `
-            <span>${varName}</span>
-            <button class="remove-btn" onclick="removeAssignment('${varName}', '${bucket}')">✕</button>
+            <span style="font-weight: 600;">${displayName}</span>
+            <button class="remove-btn" onclick="removeAssignment('${varName}', '${bucket}')" title="Remove">✕</button>
           `;
           zone.appendChild(chip);
         });
@@ -2321,16 +2336,8 @@
       updateMaxCases();
     }
 
-    function switchBucketTab(bucket) {
-      // Update tab active state
-      document.querySelectorAll('.bucket-tab').forEach(tab => tab.classList.remove('active'));
-      document.querySelector(`.bucket-tab.${bucket}-tab`).classList.add('active');
-      
-      // Update panel visibility
-      document.querySelectorAll('.bucket-panel').forEach(panel => panel.style.display = 'none');
-      document.getElementById(`panel${bucket.charAt(0).toUpperCase() + bucket.slice(1)}`).style.display = 'block';
-    }
-
+    // switchBucketTab removed - all buckets now always visible
+    
     // ============================================================================
     // MAX CASES
     // ============================================================================
