@@ -651,35 +651,81 @@
       animation: spin 1s linear infinite;
     }
 
-    /* Variable Stats Tooltip */
+    /* Variable Stats Panel (Click to show) */
     .var-stats-tooltip {
-      position: absolute;
-      background: var(--surface-2);
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      background: var(--surface-1);
       border: 2px solid var(--accent-1);
       border-radius: 8px;
-      padding: 12px;
-      min-width: 250px;
-      max-width: 350px;
+      padding: 16px;
+      min-width: 280px;
+      max-width: 400px;
+      max-height: 80vh;
+      overflow-y: auto;
       z-index: 2000;
-      pointer-events: none;
+      pointer-events: all;
       opacity: 0;
-      transition: opacity 0.2s;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+      visibility: hidden;
+      transition: all 0.3s ease;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
       font-size: 11px;
       line-height: 1.4;
     }
 
     .var-stats-tooltip.show {
       opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .var-stats-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1999;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .var-stats-overlay.show {
+      opacity: 1;
+      visibility: visible;
     }
 
     .tooltip-title {
       color: var(--accent-1);
       font-weight: 700;
-      font-size: 12px;
+      font-size: 13px;
       margin-bottom: 8px;
       padding-bottom: 6px;
       border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tooltip-close-btn {
+      background: rgba(255, 107, 107, 0.2);
+      border: 1px solid rgba(255, 107, 107, 0.4);
+      color: #ff6b6b;
+      border-radius: 4px;
+      padding: 4px 10px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .tooltip-close-btn:hover {
+      background: rgba(255, 107, 107, 0.4);
+      transform: scale(1.05);
     }
 
     .stat-row {
@@ -749,7 +795,6 @@
 
     .variables-table tbody tr:hover {
       background: rgba(255, 165, 120, 0.05);
-      cursor: pointer;
     }
   </style>
 </head>
@@ -1061,7 +1106,8 @@
     </div>
   </div>
 
-  <!-- Variable Stats Tooltip -->
+  <!-- Variable Stats Panel (Modal) -->
+  <div id="varStatsOverlay" class="var-stats-overlay" onclick="hideVariableStats()"></div>
   <div id="varStatsTooltip" class="var-stats-tooltip"></div>
 
   <script>
@@ -1315,10 +1361,18 @@
         tdIcon.innerHTML = '<i class="fa-solid fa-database variable-icon"></i>';
         tr.appendChild(tdIcon);
         
-        // Name
+        // Name (clickable)
         const tdName = document.createElement('td');
         tdName.textContent = variable.name;
         tdName.style.fontWeight = '600';
+        tdName.style.cursor = 'pointer';
+        tdName.style.color = 'var(--accent-2)';
+        tdName.style.textDecoration = 'underline';
+        tdName.title = 'Click to view statistics';
+        tdName.onclick = (e) => {
+          e.stopPropagation();
+          showVariableStats(variable);
+        };
         tr.appendChild(tdName);
         
         // N
@@ -1384,28 +1438,30 @@
         tdAssign.appendChild(btnXc);
         
         tr.appendChild(tdAssign);
-        
-        // Add hover listeners for stats tooltip
-        tr.addEventListener('mouseenter', (e) => showVariableStats(e, variable));
-        tr.addEventListener('mouseleave', hideVariableStats);
-        tr.addEventListener('mousemove', (e) => updateTooltipPosition(e));
-        
         tbody.appendChild(tr);
       });
     }
     
     // ============================================================================
-    // VARIABLE STATS TOOLTIP
+    // VARIABLE STATS PANEL (CLICK TO SHOW)
     // ============================================================================
-    function showVariableStats(event, variable) {
+    function showVariableStats(variable) {
       const tooltip = document.getElementById('varStatsTooltip');
+      const overlay = document.getElementById('varStatsOverlay');
       
-      let html = `<div class="tooltip-title">${variable.name}</div>`;
+      let html = `
+        <div class="tooltip-title">
+          <span><i class="fa-solid fa-chart-bar"></i> ${variable.name}</span>
+          <button class="tooltip-close-btn" onclick="hideVariableStats()">
+            <i class="fa-solid fa-times"></i> Close
+          </button>
+        </div>
+      `;
       
       // Show numeric statistics if available
       if (variable.stats && variable.nNum > 0) {
         html += `
-          <div style="color: var(--accent-2); font-weight: 700; margin-top: 8px; margin-bottom: 4px;">
+          <div style="color: var(--accent-2); font-weight: 700; margin-top: 12px; margin-bottom: 6px;">
             📊 Numeric Statistics (n=${variable.nNum})
           </div>
           <div class="stat-row"><span class="label">Mean:</span><span class="value">${variable.stats.mean.toFixed(2)}</span></div>
@@ -1435,7 +1491,7 @@
           const barWidth = (count / maxFreq * 100);
           html += `
             <div class="freq-row">
-              <span class="freq-category">${String(category).substring(0, 20)}</span>
+              <span class="freq-category">${String(category).substring(0, 25)}</span>
               <span class="freq-count">${count} (${percent}%)</span>
               <div class="freq-bar">
                 <div class="freq-bar-fill" style="width: ${barWidth}%"></div>
@@ -1451,23 +1507,23 @@
         }
       }
       
+      // Add summary at bottom
+      html += `
+        <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 10px;">
+          Total: ${variable.n} observations | Numeric: ${variable.nNum} | Categorical: ${variable.nCat} | Unique: ${variable.nUnique}
+        </div>
+      `;
+      
       tooltip.innerHTML = html;
-      updateTooltipPosition(event);
       tooltip.classList.add('show');
+      overlay.classList.add('show');
     }
     
     function hideVariableStats() {
       const tooltip = document.getElementById('varStatsTooltip');
+      const overlay = document.getElementById('varStatsOverlay');
       tooltip.classList.remove('show');
-    }
-    
-    function updateTooltipPosition(event) {
-      const tooltip = document.getElementById('varStatsTooltip');
-      const x = event.clientX + 15;
-      const y = event.clientY + 15;
-      
-      tooltip.style.left = x + 'px';
-      tooltip.style.top = y + 'px';
+      overlay.classList.remove('show');
     }
 
     // ============================================================================
