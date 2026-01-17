@@ -471,23 +471,6 @@
       box-shadow: 0 0 0 2px rgba(152, 195, 121, 0.2);
     }
 
-    .range-option.active::before {
-      content: "✓";
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      width: 20px;
-      height: 20px;
-      background: var(--accent-3);
-      color: #000;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 700;
-      z-index: 10;
-    }
 
     .range-option-header {
       display: flex;
@@ -1357,8 +1340,8 @@
                 <span class="range-option-title">Named Range</span>
               </div>
               <div class="range-option-content">
-                <select id="rangeSelector" onchange="loadFromNamedRange()" style="width: 100%; font-size: 11px;">
-                  <option value="">-- Select --</option>
+                <select id="rangeSelector" onchange="loadFromNamedRange()" style="width: 100%; font-size: 11px; color: var(--text-secondary);">
+                  <option value="" style="color: var(--text-muted);">-- Select --</option>
                 </select>
               </div>
             </div>
@@ -1376,15 +1359,15 @@
               </div>
             </div>
             
-            <!-- Option 3: Manual Selection -->
+            <!-- Option 3: Selected Range -->
             <div id="rangeOption3" class="range-option">
               <div class="range-option-header">
                 <span class="range-option-number">3</span>
-                <span class="range-option-title">Select Cells</span>
+                <span class="range-option-title">Selected Range</span>
               </div>
               <div class="range-option-content">
                 <button id="btnUseSelection" class="btn" onclick="useSelection()" style="width: 100%; padding: 8px; font-size: 11px; background: linear-gradient(135deg, var(--accent-2), #4CAF50);" disabled>
-                  <i class="fa-solid fa-check"></i> Use Selection
+                  Select
                 </button>
               </div>
             </div>
@@ -1764,14 +1747,28 @@
       if (selectedOption) {
         selectedOption.classList.add('active');
       }
+      
+      // Reset named range selector if switching to option 2 or 3
+      if (optionNumber !== 1) {
+        const rangeSelector = document.getElementById('rangeSelector');
+        if (rangeSelector) {
+          rangeSelector.value = '';
+          rangeSelector.style.color = 'var(--text-muted)'; // Reset to gray
+        }
+      }
     }
 
     function loadFromNamedRange() {
       const selector = document.getElementById('rangeSelector');
       const rangeName = selector.value;
       
-      if (!rangeName) return;
+      // Change color based on selection
+      if (!rangeName) {
+        selector.style.color = 'var(--text-muted)';
+        return;
+      }
       
+      selector.style.color = 'var(--text-primary)';
       setActiveRangeOption(1); // Mark option 1 as active
       
       Excel.run(async (context) => {
