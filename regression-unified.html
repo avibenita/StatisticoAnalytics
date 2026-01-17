@@ -788,6 +788,134 @@
       background: var(--surface-0);
     }
 
+    /* Category Selection UI */
+    .category-selector {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px;
+      background: var(--surface-0);
+      margin-top: 12px;
+    }
+
+    .category-select-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .select-all-btns {
+      display: flex;
+      gap: 6px;
+    }
+
+    .select-toggle-btn {
+      padding: 4px 10px;
+      font-size: 10px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .select-toggle-btn:hover {
+      background: var(--surface-1);
+      color: var(--accent-3);
+    }
+
+    .category-checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .category-checkbox-row:hover {
+      background: var(--surface-1);
+    }
+
+    .category-checkbox-row input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: var(--accent-3);
+    }
+
+    .category-checkbox-label {
+      flex: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .category-name {
+      color: var(--text-primary);
+      font-weight: 500;
+      max-width: 60%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .category-stats {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    .category-count {
+      font-weight: 600;
+      color: var(--accent-3);
+    }
+
+    .category-bar-mini {
+      width: 60px;
+      height: 6px;
+      background: var(--surface-2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .category-bar-fill-mini {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-3), #4CAF50);
+      transition: width 0.3s;
+    }
+
+    .selection-summary {
+      margin-top: 10px;
+      padding: 8px;
+      background: var(--surface-2);
+      border-radius: 4px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    .selection-summary.valid {
+      color: var(--accent-3);
+      font-weight: 600;
+    }
+
+    .selection-summary.invalid {
+      color: #e06c75;
+      font-weight: 600;
+    }
+
     .tooltip-title {
       color: var(--accent-1);
       font-weight: 700;
@@ -1215,7 +1343,8 @@
         xc: []
       },
       currentRange: null,
-      rawData: {}
+      rawData: {},
+      selectedCategories: {}  // For Xc variables: { varName: [selected categories] }
     };
 
     // ============================================================================
@@ -1519,8 +1648,19 @@
         
         const btnXc = document.createElement('button');
         btnXc.className = 'var-assign-btn xc';
-        btnXc.textContent = 'Xc';
-        btnXc.setAttribute('data-tooltip', 'Categorical Predictor');
+        
+        // Show category selection info if applicable
+        const hasCustomSelection = STATE.selectedCategories[variable.name];
+        if (hasCustomSelection) {
+          const selectedCount = hasCustomSelection.length;
+          const totalCount = variable.nUnique;
+          btnXc.textContent = `Xc (${selectedCount}/${totalCount})`;
+          btnXc.setAttribute('data-tooltip', `Categorical Predictor - ${selectedCount} of ${totalCount} categories selected. Click to edit.`);
+        } else {
+          btnXc.textContent = 'Xc';
+          btnXc.setAttribute('data-tooltip', 'Categorical Predictor');
+        }
+        
         btnXc.onclick = () => assignVariable(idx, 'xc');
         if (STATE.assignments.xc.includes(variable.name)) btnXc.classList.add('active');
         
@@ -1626,64 +1766,90 @@
       const modal = document.getElementById('warningModal');
       const overlay = document.getElementById('warningOverlay');
       
+      // Get existing selections or default to all categories
+      const existingSelections = STATE.selectedCategories[variable.name];
+      const allCategories = variable.freqTable ? variable.freqTable.map(([cat, _]) => cat) : variable.uniqueCategories;
+      const selectedCats = existingSelections || [...allCategories];
+      
       let html = `
         <div class="warning-header">
           <span class="warning-icon">⚠️</span>
-          <span>Many Categories Detected</span>
+          <span>Select Categories for ${variable.name}</span>
         </div>
         
         <div class="warning-content">
           <p><strong>${variable.name}</strong> has <strong>${variable.nUnique} unique categories</strong>.</p>
-          <p>Categorical variables with many categories will create ${variable.nUnique - 1} dummy variables, which may:</p>
-          <ul style="margin: 8px 0; padding-left: 20px;">
-            <li>Reduce degrees of freedom significantly</li>
-            <li>Cause overfitting with limited data</li>
-            <li>Make interpretation difficult</li>
-          </ul>
-          <p style="margin-top: 12px;"><strong>Recommendation:</strong> Consider grouping categories or using as numeric (Xn) if ordinal.</p>
+          <p style="font-size: 11px; color: var(--text-muted);">Select which categories to include in the model. Selected categories will create ${Math.max(0, selectedCats.length - 1)} dummy variables.</p>
         </div>
       `;
       
-      // Show frequency table if available
+      // Category selector with checkboxes
       if (variable.freqTable && variable.freqTable.length > 0) {
         const totalForPercent = variable.n;
         const maxFreq = Math.max(...variable.freqTable.map(([_, count]) => count));
         
         html += `
           <div style="color: var(--accent-3); font-weight: 700; margin-top: 12px; margin-bottom: 6px; font-size: 12px;">
-            📋 Category Distribution
+            📋 Select Categories to Include
           </div>
-          <div class="freq-table" style="max-height: 200px; overflow-y: auto;">
+          
+          <div class="category-select-header">
+            <span style="font-size: 11px; color: var(--text-muted);">Category (Count)</span>
+            <div class="select-all-btns">
+              <button class="select-toggle-btn" onclick="toggleAllCategories('${variable.name}', true)">Select All</button>
+              <button class="select-toggle-btn" onclick="toggleAllCategories('${variable.name}', false)">Clear All</button>
+            </div>
+          </div>
+          
+          <div class="category-selector" id="categorySelector">
         `;
         
         variable.freqTable.forEach(([category, count]) => {
           const percent = ((count / totalForPercent) * 100).toFixed(1);
           const barWidth = (count / maxFreq * 100);
+          const isChecked = selectedCats.includes(category);
+          const catId = `cat_${variable.name}_${String(category).replace(/[^a-zA-Z0-9]/g, '_')}`;
+          
           html += `
-            <div class="freq-row">
-              <span class="freq-category">${String(category).substring(0, 20)}</span>
-              <span class="freq-count">${count} (${percent}%)</span>
-              <div class="freq-bar">
-                <div class="freq-bar-fill" style="width: ${barWidth}%"></div>
-              </div>
+            <div class="category-checkbox-row" onclick="toggleCategoryCheckbox('${catId}')">
+              <input type="checkbox" 
+                     id="${catId}" 
+                     data-category="${String(category)}" 
+                     data-varname="${variable.name}"
+                     ${isChecked ? 'checked' : ''}
+                     onclick="event.stopPropagation()">
+              <label class="category-checkbox-label" for="${catId}">
+                <span class="category-name" title="${String(category)}">${String(category).substring(0, 30)}</span>
+                <div class="category-stats">
+                  <span class="category-count">${count}</span>
+                  <span>(${percent}%)</span>
+                  <div class="category-bar-mini">
+                    <div class="category-bar-fill-mini" style="width: ${barWidth}%"></div>
+                  </div>
+                </div>
+              </label>
             </div>
           `;
         });
         
         html += '</div>';
         
-        if (variable.nUnique > 10) {
-          html += `<div style="color: var(--text-muted); font-size: 10px; margin-top: 6px; text-align: center;">Showing top 10 of ${variable.nUnique} categories</div>`;
+        if (variable.nUnique > variable.freqTable.length) {
+          html += `<div style="color: var(--text-muted); font-size: 10px; margin-top: 6px; text-align: center;">Showing top ${variable.freqTable.length} of ${variable.nUnique} categories</div>`;
         }
       }
       
       html += `
+        <div class="selection-summary" id="selectionSummary">
+          <span id="summaryText">Select at least 2 categories</span>
+        </div>
+        
         <div class="warning-actions">
           <button class="warning-btn cancel" onclick="closeCategoryWarning()">
             <i class="fa-solid fa-times"></i> Cancel
           </button>
-          <button class="warning-btn confirm" onclick="confirmCategoryAssignment(${varIdx})">
-            <i class="fa-solid fa-check"></i> Assign Anyway
+          <button class="warning-btn confirm" id="confirmBtn" onclick="confirmCategoryAssignment(${varIdx})">
+            <i class="fa-solid fa-check"></i> Confirm Selection
           </button>
         </div>
       `;
@@ -1691,6 +1857,9 @@
       modal.innerHTML = html;
       modal.classList.add('show');
       overlay.classList.add('show');
+      
+      // Update summary after render
+      updateCategorySelectionSummary(variable.name);
     }
     
     function closeCategoryWarning() {
@@ -1700,8 +1869,65 @@
       overlay.classList.remove('show');
     }
     
+    function toggleCategoryCheckbox(checkboxId) {
+      const checkbox = document.getElementById(checkboxId);
+      if (checkbox) {
+        checkbox.checked = !checkbox.checked;
+        updateCategorySelectionSummary(checkbox.dataset.varname);
+      }
+    }
+    
+    function toggleAllCategories(varName, selectAll) {
+      const checkboxes = document.querySelectorAll(`input[type="checkbox"][data-varname="${varName}"]`);
+      checkboxes.forEach(cb => cb.checked = selectAll);
+      updateCategorySelectionSummary(varName);
+    }
+    
+    function updateCategorySelectionSummary(varName) {
+      const checkboxes = document.querySelectorAll(`input[type="checkbox"][data-varname="${varName}"]`);
+      const selectedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+      const totalCount = checkboxes.length;
+      
+      const summaryText = document.getElementById('summaryText');
+      const summary = document.getElementById('selectionSummary');
+      const confirmBtn = document.getElementById('confirmBtn');
+      
+      if (!summaryText || !summary || !confirmBtn) return;
+      
+      if (selectedCount < 2) {
+        summaryText.textContent = `⚠️ Select at least 2 categories (currently ${selectedCount} selected)`;
+        summary.className = 'selection-summary invalid';
+        confirmBtn.disabled = true;
+        confirmBtn.style.opacity = '0.5';
+        confirmBtn.style.cursor = 'not-allowed';
+      } else {
+        const dummyCount = selectedCount - 1;
+        summaryText.textContent = `✓ ${selectedCount} of ${totalCount} categories selected → ${dummyCount} dummy variable${dummyCount !== 1 ? 's' : ''}`;
+        summary.className = 'selection-summary valid';
+        confirmBtn.disabled = false;
+        confirmBtn.style.opacity = '1';
+        confirmBtn.style.cursor = 'pointer';
+      }
+    }
+    
     function confirmCategoryAssignment(varIdx) {
       const variable = STATE.variables[varIdx];
+      
+      // Get selected categories
+      const checkboxes = document.querySelectorAll(`input[type="checkbox"][data-varname="${variable.name}"]`);
+      const selectedCategories = Array.from(checkboxes)
+        .filter(cb => cb.checked)
+        .map(cb => cb.dataset.category);
+      
+      if (selectedCategories.length < 2) {
+        alert('Please select at least 2 categories to create a categorical variable.');
+        return;
+      }
+      
+      // Store selected categories
+      STATE.selectedCategories[variable.name] = selectedCategories;
+      console.log(`📋 Selected categories for ${variable.name}:`, selectedCategories);
+      
       closeCategoryWarning();
       performAssignment(variable.name, 'xc', false);
     }
@@ -1722,8 +1948,8 @@
         isAlreadyInThisBucket = STATE.assignments.xc.includes(variable.name);
       }
       
-      // Warning for Xc with > 5 categories
-      if (bucket === 'xc' && !isAlreadyInThisBucket && variable.nUnique > 5) {
+      // Category selector for Xc with > 5 categories (always show, even if already assigned)
+      if (bucket === 'xc' && variable.nUnique > 5) {
         showCategoryWarning(variable, varIdx);
         return; // Don't assign yet, wait for user confirmation
       }
@@ -1894,22 +2120,35 @@
         STATE.assignments.xc.forEach(varName => {
           const v = STATE.variables.find(v => v.name === varName);
           if (v) {
-            // Get unique categories (excluding null/empty)
-            const categories = [...new Set(v.data.filter(val => 
+            // Get all unique categories (excluding null/empty)
+            let allCategories = [...new Set(v.data.filter(val => 
               val !== null && val !== undefined && val !== ''
             ))].sort();
             
-            console.log(`📊 Categorical variable "${varName}" has ${categories.length} categories:`, categories);
+            // Use selected categories if available, otherwise use all
+            let categories = STATE.selectedCategories[varName] 
+              ? STATE.selectedCategories[varName].filter(cat => allCategories.includes(cat))
+              : allCategories;
+            
+            // If no selection stored yet but >5 categories, this shouldn't happen (modal should show first)
+            // But as a safeguard, use all categories
+            if (categories.length === 0) {
+              categories = allCategories;
+            }
+            
+            console.log(`📊 Categorical variable "${varName}" - Using ${categories.length} of ${allCategories.length} categories:`, categories);
             
             if (categories.length < 2) {
-              throw new Error(`Categorical variable "${varName}" has less than 2 categories. Cannot use in regression.`);
+              throw new Error(`Categorical variable "${varName}" needs at least 2 categories. Currently selected: ${categories.length}`);
             }
             
             // Create k-1 dummy variables (first category is reference)
             const referenceCategory = categories[0];
             dummyInfo[varName] = {
               reference: referenceCategory,
-              categories: categories
+              categories: categories,
+              totalCategories: allCategories.length,
+              excluded: allCategories.filter(cat => !categories.includes(cat))
             };
             
             for (let i = 1; i < categories.length; i++) {
@@ -1924,7 +2163,10 @@
               xCategoricalNames.push(`${varName}=${category}`);
             }
             
-            console.log(`   Created ${categories.length - 1} dummy variables (reference: ${referenceCategory})`);
+            console.log(`   ✓ Created ${categories.length - 1} dummy variables (reference: ${referenceCategory})`);
+            if (dummyInfo[varName].excluded.length > 0) {
+              console.log(`   📌 Excluded categories: ${dummyInfo[varName].excluded.join(', ')}`);
+            }
           }
         });
         
