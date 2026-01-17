@@ -1164,6 +1164,17 @@
       flex-shrink: 0;
     }
 
+    .vars-modal-info-top {
+      display: flex;
+      gap: 20px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, rgba(152, 195, 121, 0.1), rgba(120, 200, 255, 0.05));
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 16px;
+      flex-shrink: 0;
+    }
+
     .info-row {
       display: flex;
       align-items: center;
@@ -1637,23 +1648,24 @@
         <i class="fa-solid fa-times"></i>
       </button>
     </div>
-    
-    <div class="vars-modal-info">
-      <div class="info-row">
-        <i class="fa-solid fa-database"></i>
-        <span><strong>Variables Loaded:</strong> <span id="modalVarCount">0</span></span>
-      </div>
-      <div class="info-row">
-        <i class="fa-solid fa-check-circle" style="color: var(--accent-3);"></i>
-        <span><strong>Assigned:</strong> <span id="modalAssignedCount">0</span></span>
-      </div>
-      <div class="info-row">
-        <i class="fa-solid fa-chart-line" style="color: var(--accent-2);"></i>
-        <span><strong>Observations to use:</strong> <span id="modalObsCount" style="color: var(--accent-2); font-weight: 700;">--</span></span>
-      </div>
-    </div>
 
     <div class="vars-modal-content">
+      <!-- Variable Stats at Top -->
+      <div class="vars-modal-info-top">
+        <div class="info-row">
+          <i class="fa-solid fa-database"></i>
+          <span><strong>Variables Loaded:</strong> <span id="modalVarCount">0</span></span>
+        </div>
+        <div class="info-row">
+          <i class="fa-solid fa-check-circle" style="color: var(--accent-3);"></i>
+          <span><strong>Assigned:</strong> <span id="modalAssignedCount">0</span></span>
+        </div>
+        <div class="info-row">
+          <i class="fa-solid fa-chart-line" style="color: var(--accent-2);"></i>
+          <span><strong>Observations to use:</strong> <span id="modalObsCount" style="color: var(--accent-2); font-weight: 700;">--</span></span>
+        </div>
+      </div>
+
       <div class="variables-table-container">
         <table class="variables-table">
           <thead>
