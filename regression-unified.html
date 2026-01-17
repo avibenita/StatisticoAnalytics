@@ -355,46 +355,103 @@
     }
 
     /* Bucket Tabs */
-    /* Bucket Containers - Always Visible */
+    /* Variables Assignment Button */
+    .vars-assign-btn {
+      background: linear-gradient(135deg, var(--accent-3), #4CAF50) !important;
+      color: #000 !important;
+      font-size: 14px !important;
+      font-weight: 700 !important;
+      padding: 12px 24px !important;
+      border-radius: 8px !important;
+      box-shadow: 0 4px 12px rgba(152, 195, 121, 0.3) !important;
+      transition: all 0.3s ease !important;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      min-width: 200px;
+      max-width: 300px;
+    }
+
+    .vars-assign-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(152, 195, 121, 0.5) !important;
+    }
+
+    .vars-assign-btn:active {
+      transform: translateY(0px);
+    }
+
+    .btn-subtitle {
+      font-size: 10px;
+      font-weight: 400;
+      opacity: 0.9;
+      text-align: center;
+    }
+
+    /* Bucket Containers - Side by Side */
     .bucket-container {
       border: 1px solid var(--border);
       border-radius: 6px;
       overflow: hidden;
       background: var(--surface-0);
+      display: flex;
+      flex-direction: column;
     }
 
     .bucket-header {
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
       align-items: center;
-      padding: 8px 12px;
-      font-size: 12px;
+      padding: 10px 8px;
+      font-size: 11px;
       font-weight: 700;
       border-bottom: 1px solid var(--border);
+      gap: 6px;
     }
 
     .bucket-header.y-header {
-      background: linear-gradient(135deg, rgba(255, 165, 120, 0.15), rgba(255, 165, 120, 0.05));
+      background: linear-gradient(180deg, rgba(255, 165, 120, 0.2), rgba(255, 165, 120, 0.05));
       color: var(--accent-1);
-      border-bottom-color: rgba(255, 165, 120, 0.3);
+      border-bottom-color: rgba(255, 165, 120, 0.4);
     }
 
     .bucket-header.xn-header {
-      background: linear-gradient(135deg, rgba(120, 200, 255, 0.15), rgba(120, 200, 255, 0.05));
+      background: linear-gradient(180deg, rgba(120, 200, 255, 0.2), rgba(120, 200, 255, 0.05));
       color: var(--accent-2);
-      border-bottom-color: rgba(120, 200, 255, 0.3);
+      border-bottom-color: rgba(120, 200, 255, 0.4);
     }
 
     .bucket-header.xc-header {
-      background: linear-gradient(135deg, rgba(152, 195, 121, 0.15), rgba(152, 195, 121, 0.05));
+      background: linear-gradient(180deg, rgba(152, 195, 121, 0.2), rgba(152, 195, 121, 0.05));
       color: var(--accent-3);
-      border-bottom-color: rgba(152, 195, 121, 0.3);
+      border-bottom-color: rgba(152, 195, 121, 0.4);
     }
 
     .bucket-title {
       display: flex;
       align-items: center;
       gap: 6px;
+    }
+
+    .bucket-title-vertical {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .bucket-title-vertical i {
+      font-size: 16px;
+    }
+
+    .bucket-title-vertical span {
+      font-size: 10px;
+      font-weight: 700;
     }
 
     .bucket-count {
@@ -407,10 +464,11 @@
 
     .bucket-content {
       padding: 8px;
-      min-height: 60px;
+      min-height: 100px;
       display: flex;
       flex-direction: column;
       gap: 4px;
+      flex: 1;
     }
 
     .bucket-content.y-content {
@@ -442,8 +500,9 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 11px;
+      font-size: 10px;
       transition: all 0.2s;
+      word-break: break-word;
     }
 
     .assigned-var-chip:hover {
@@ -1247,14 +1306,12 @@
         </div>
 
         <!-- Variables Assignment Button -->
-        <div class="panel-section" style="padding: 0;">
-          <button class="btn" onclick="openVariablesAssignment()" style="width: 100%; background: linear-gradient(135deg, var(--accent-3), #4CAF50); font-size: 13px; padding: 14px; display: flex; align-items: center; justify-content: space-between;">
-            <span>
-              <i class="fa-solid fa-list"></i> <strong>Variables Assignment</strong>
-            </span>
-            <span id="varsAssignSummary" style="font-size: 11px; opacity: 0.9;">
+        <div class="panel-section" style="padding: 0; display: flex; justify-content: center;">
+          <button class="btn vars-assign-btn" onclick="openVariablesAssignment()">
+            <i class="fa-solid fa-hand-pointer"></i> <strong>Assign Variables to model</strong>
+            <div id="varsAssignSummary" class="btn-subtitle">
               Click to assign variables
-            </span>
+            </div>
           </button>
         </div>
 
@@ -1272,13 +1329,16 @@
             <i class="fa-solid fa-chart-line"></i> Model Assignment
           </div>
           
-          <!-- All 3 Buckets Stacked Vertically -->
-          <div style="display: flex; flex-direction: column; gap: 10px; padding: 10px;">
+          <!-- All 3 Buckets Side by Side -->
+          <div style="display: flex; gap: 8px; padding: 10px;">
             
             <!-- Y Bucket -->
-            <div class="bucket-container">
+            <div class="bucket-container" style="flex: 1;">
               <div class="bucket-header y-header">
-                <span class="bucket-title"><i class="fa-solid fa-bullseye"></i> Y (Response)</span>
+                <div class="bucket-title-vertical">
+                  <i class="fa-solid fa-bullseye"></i>
+                  <span>Y<br>(Response)</span>
+                </div>
                 <span class="bucket-count" id="countY">0</span>
               </div>
               <div class="bucket-content y-content" id="zoneY">
@@ -1287,9 +1347,12 @@
             </div>
             
             <!-- Xn Bucket -->
-            <div class="bucket-container">
+            <div class="bucket-container" style="flex: 1;">
               <div class="bucket-header xn-header">
-                <span class="bucket-title"><i class="fa-solid fa-hashtag"></i> X (numeric)</span>
+                <div class="bucket-title-vertical">
+                  <i class="fa-solid fa-hashtag"></i>
+                  <span>X<br>(numeric)</span>
+                </div>
                 <span class="bucket-count" id="countXn">0</span>
               </div>
               <div class="bucket-content xn-content" id="zoneXn">
@@ -1298,9 +1361,12 @@
             </div>
             
             <!-- Xc Bucket -->
-            <div class="bucket-container">
+            <div class="bucket-container" style="flex: 1;">
               <div class="bucket-header xc-header">
-                <span class="bucket-title"><i class="fa-solid fa-tags"></i> X (Categ.)</span>
+                <div class="bucket-title-vertical">
+                  <i class="fa-solid fa-tags"></i>
+                  <span>X<br>(Categ.)</span>
+                </div>
                 <span class="bucket-count" id="countXc">0</span>
               </div>
               <div class="bucket-content xc-content" id="zoneXc">
@@ -1491,7 +1557,7 @@
   <div id="varsAssignModal" class="vars-assign-modal">
     <div class="vars-modal-header">
       <div>
-        <i class="fa-solid fa-list"></i> <strong>Variables Assignment</strong>
+        <i class="fa-solid fa-hand-pointer"></i> <strong>Assign Variables to Model</strong>
       </div>
       <button class="close-modal-btn" onclick="closeVariablesAssignment()" title="Close">
         <i class="fa-solid fa-times"></i>
