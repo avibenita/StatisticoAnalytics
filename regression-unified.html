@@ -1249,27 +1249,62 @@
         const includeIntercept = document.getElementById('interceptCheck').checked;
         const yVar = STATE.variables.find(v => v.name === STATE.assignments.y);
         
-        // Combine all X variables
-        const xVars = [];
-        const xVarNames = [];
-        
-        // Add numeric predictors
+        // Collect numeric variables
+        const xNumericVars = [];
+        const xNumericNames = [];
         STATE.assignments.xn.forEach(varName => {
           const v = STATE.variables.find(v => v.name === varName);
           if (v) {
-            xVars.push(v);
-            xVarNames.push(varName);
+            xNumericVars.push(v);
+            xNumericNames.push(varName);
           }
         });
         
-        // Add categorical predictors
+        // Process categorical variables with dummy coding
+        const xCategoricalVars = [];
+        const xCategoricalNames = [];
+        const dummyInfo = {}; // Track dummy variable information
+        
         STATE.assignments.xc.forEach(varName => {
           const v = STATE.variables.find(v => v.name === varName);
           if (v) {
-            xVars.push(v);
-            xVarNames.push(varName);
+            // Get unique categories (excluding null/empty)
+            const categories = [...new Set(v.data.filter(val => 
+              val !== null && val !== undefined && val !== ''
+            ))].sort();
+            
+            console.log(`📊 Categorical variable "${varName}" has ${categories.length} categories:`, categories);
+            
+            if (categories.length < 2) {
+              throw new Error(`Categorical variable "${varName}" has less than 2 categories. Cannot use in regression.`);
+            }
+            
+            // Create k-1 dummy variables (first category is reference)
+            const referenceCategory = categories[0];
+            dummyInfo[varName] = {
+              reference: referenceCategory,
+              categories: categories
+            };
+            
+            for (let i = 1; i < categories.length; i++) {
+              const category = categories[i];
+              const dummyVar = {
+                name: `${varName}_${category}`,
+                originalVar: varName,
+                category: category,
+                data: v.data.map(val => (val === category ? 1 : 0))
+              };
+              xCategoricalVars.push(dummyVar);
+              xCategoricalNames.push(`${varName}=${category}`);
+            }
+            
+            console.log(`   Created ${categories.length - 1} dummy variables (reference: ${referenceCategory})`);
           }
         });
+        
+        // Combine all X variables (numeric + dummy-coded categorical)
+        const allXVars = [...xNumericVars, ...xCategoricalVars];
+        const allXNames = [...xNumericNames, ...xCategoricalNames];
         
         // Convert to numeric and build X matrix (each ROW is an observation)
         const Y = [];
@@ -1278,7 +1313,7 @@
         const numObs = yVar.data.length;
         for (let i = 0; i < numObs; i++) {
           const yVal = Number(yVar.data[i]);
-          const xRow = xVars.map(xVar => Number(xVar.data[i]));
+          const xRow = allXVars.map(xVar => Number(xVar.data[i]));
           
           // Check for missing values
           const allValid = !isNaN(yVal) && xRow.every(x => !isNaN(x));
@@ -1290,15 +1325,25 @@
         }
         
         console.log(`📊 Data prepared: ${Y.length} observations, ${X[0].length} predictors`);
+        console.log(`   Numeric variables: ${xNumericNames.length}`);
+        console.log(`   Categorical variables: ${STATE.assignments.xc.length} (${xCategoricalVars.length} dummies)`);
         console.log(`   Y: ${Y.length} values`);
         console.log(`   X: ${X.length} rows × ${X[0].length} cols`);
+        
+        // Check for perfect multicollinearity before running regression
+        if (X[0].length >= Y.length) {
+          throw new Error(`Too many predictors (${X[0].length}) for ${Y.length} observations. Need at least ${X[0].length + 1} observations.`);
+        }
         
         // Run regression using working computeOLS function
         const results = computeOLS(X, Y, includeIntercept, 0.05);
         
-        // Add variable names
+        // Add variable names and dummy info
         results.yVarName = STATE.assignments.y;
-        results.xVarNames = xVarNames;
+        results.xVarNames = allXNames;
+        results.numericVarCount = xNumericNames.length;
+        results.categoricalVarCount = STATE.assignments.xc.length;
+        results.dummyInfo = dummyInfo;
         
         // Format results for popup and store in localStorage
         formatAndOpenPopup(results);
@@ -1515,8 +1560,8 @@
         sampleInfo: {
           usedObs: results.n,
           includeIntercept: results.includeIntercept ? 'Yes' : 'No',
-          numericVars: results.xVarNames.length,
-          categoricalVars: 0
+          numericVars: results.numericVarCount || 0,
+          categoricalVars: results.categoricalVarCount || 0
         },
         modelFit: {
           rSquared: results.R2.toFixed(4),
