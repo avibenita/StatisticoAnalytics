@@ -199,6 +199,33 @@
     }
 
     /* Variables Table */
+    .variables-table-container {
+      max-height: 250px; /* ~5 rows at 50px each */
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface-0);
+    }
+
+    .variables-table-container::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .variables-table-container::-webkit-scrollbar-track {
+      background: var(--surface-2);
+      border-radius: 6px;
+    }
+
+    .variables-table-container::-webkit-scrollbar-thumb {
+      background: var(--accent-1);
+      border-radius: 6px;
+      border: 2px solid var(--surface-2);
+    }
+
+    .variables-table-container::-webkit-scrollbar-thumb:hover {
+      background: var(--accent-2);
+    }
+
     .variables-table {
       width: 100%;
       border-collapse: collapse;
@@ -245,25 +272,29 @@
       padding: 4px 8px;
       font-size: 10px;
       border-radius: 4px;
-      border: none;
+      border: 1px solid transparent;
       cursor: pointer;
       font-weight: 600;
       transition: all 0.2s;
+      position: relative;
     }
 
     .var-assign-btn.y {
       background: rgba(255, 165, 120, 0.2);
       color: var(--accent-1);
+      border-color: rgba(255, 165, 120, 0.3);
     }
 
     .var-assign-btn.xn {
       background: rgba(120, 200, 255, 0.2);
       color: var(--accent-2);
+      border-color: rgba(120, 200, 255, 0.3);
     }
 
     .var-assign-btn.xc {
       background: rgba(152, 195, 121, 0.2);
       color: var(--accent-3);
+      border-color: rgba(152, 195, 121, 0.3);
     }
 
     .var-assign-btn:hover {
@@ -271,9 +302,56 @@
       opacity: 0.8;
     }
 
+    /* EMPHASIZED ACTIVE STATE */
     .var-assign-btn.active {
-      opacity: 1;
       font-weight: 800;
+      border-width: 2px;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
+    }
+
+    .var-assign-btn.y.active {
+      background: rgba(255, 165, 120, 0.5);
+      border-color: var(--accent-1);
+      box-shadow: 0 0 12px rgba(255, 165, 120, 0.6);
+    }
+
+    .var-assign-btn.xn.active {
+      background: rgba(120, 200, 255, 0.5);
+      border-color: var(--accent-2);
+      box-shadow: 0 0 12px rgba(120, 200, 255, 0.6);
+    }
+
+    .var-assign-btn.xc.active {
+      background: rgba(152, 195, 121, 0.5);
+      border-color: var(--accent-3);
+      box-shadow: 0 0 12px rgba(152, 195, 121, 0.6);
+    }
+
+    /* Tooltip */
+    .var-assign-btn::before {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-5px);
+      background: var(--surface-2);
+      color: var(--text-primary);
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 1000;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .var-assign-btn:hover::before {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-8px);
     }
 
     /* Bucket Tabs */
@@ -634,23 +712,25 @@
             <i class="fa-solid fa-list"></i> Available Variables
           </div>
 
-          <table class="variables-table">
-            <thead>
-              <tr>
-                <th style="width: 30px;"></th>
-                <th>VARIABLE</th>
-                <th class="center" style="width: 60px;">N</th>
-                <th class="center" style="width: 150px;">ASSIGN TO</th>
-              </tr>
-            </thead>
-            <tbody id="variablesBody">
-              <tr>
-                <td colspan="4" style="text-align: center; padding: 20px; color: var(--text-muted);">
-                  No data loaded. Select a range above.
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="variables-table-container">
+            <table class="variables-table">
+              <thead>
+                <tr>
+                  <th style="width: 30px;"></th>
+                  <th>VARIABLE</th>
+                  <th class="center" style="width: 60px;">N</th>
+                  <th class="center" style="width: 150px;">ASSIGN TO</th>
+                </tr>
+              </thead>
+              <tbody id="variablesBody">
+                <tr>
+                  <td colspan="4" style="text-align: center; padding: 20px; color: var(--text-muted);">
+                    No data loaded. Select a range above.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Maximum Usable Cases -->
@@ -1076,25 +1156,28 @@
         tdN.style.textAlign = 'center';
         tr.appendChild(tdN);
         
-        // Assign buttons
+        // Assign buttons with tooltips
         const tdAssign = document.createElement('td');
         tdAssign.style.textAlign = 'center';
         
         const btnY = document.createElement('button');
         btnY.className = 'var-assign-btn y';
         btnY.textContent = 'Y';
+        btnY.setAttribute('data-tooltip', 'Response Variable (Dependent)');
         btnY.onclick = () => assignVariable(idx, 'y');
         if (STATE.assignments.y === variable.name) btnY.classList.add('active');
         
         const btnXn = document.createElement('button');
         btnXn.className = 'var-assign-btn xn';
         btnXn.textContent = 'Xn';
+        btnXn.setAttribute('data-tooltip', 'Numeric Predictor');
         btnXn.onclick = () => assignVariable(idx, 'xn');
         if (STATE.assignments.xn.includes(variable.name)) btnXn.classList.add('active');
         
         const btnXc = document.createElement('button');
         btnXc.className = 'var-assign-btn xc';
         btnXc.textContent = 'Xc';
+        btnXc.setAttribute('data-tooltip', 'Categorical Predictor');
         btnXc.onclick = () => assignVariable(idx, 'xc');
         if (STATE.assignments.xc.includes(variable.name)) btnXc.classList.add('active');
         
