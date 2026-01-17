@@ -1594,8 +1594,7 @@
           
           // Sort by frequency descending
           freqTable = Object.entries(frequencies)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 10); // Top 10 categories
+            .sort((a, b) => b[1] - a[1]); // All categories available
         }
         
         return {
@@ -1783,10 +1782,6 @@
         });
         
         html += '</div>';
-        
-        if (variable.nUnique > 10) {
-          html += `<div style="color: var(--text-muted); font-size: 10px; margin-top: 6px; text-align: center;">Showing top 10 of ${variable.nUnique} categories</div>`;
-        }
       }
       
       // Add summary at bottom
