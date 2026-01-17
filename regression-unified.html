@@ -454,12 +454,39 @@
     /* Range Options - 3 Panels in Row */
     .range-option {
       flex: 1;
-      border: 1px solid var(--border);
+      border: 2px solid var(--border);
       border-radius: 6px;
       background: var(--surface-0);
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      transition: all 0.3s ease;
+      position: relative;
+      opacity: 0.6;
+    }
+
+    .range-option.active {
+      border-color: var(--accent-3);
+      opacity: 1;
+      box-shadow: 0 0 0 2px rgba(152, 195, 121, 0.2);
+    }
+
+    .range-option.active::before {
+      content: "✓";
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 20px;
+      height: 20px;
+      background: var(--accent-3);
+      color: #000;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      z-index: 10;
     }
 
     .range-option-header {
@@ -469,6 +496,12 @@
       padding: 8px 10px;
       background: linear-gradient(135deg, rgba(120, 200, 255, 0.15), rgba(120, 200, 255, 0.05));
       border-bottom: 1px solid rgba(120, 200, 255, 0.3);
+      transition: background 0.3s ease;
+    }
+
+    .range-option.active .range-option-header {
+      background: linear-gradient(135deg, rgba(152, 195, 121, 0.25), rgba(152, 195, 121, 0.1));
+      border-bottom-color: rgba(152, 195, 121, 0.4);
     }
 
     .range-option-number {
@@ -1318,7 +1351,7 @@
           <div style="display: flex; gap: 8px; margin-bottom: 12px;">
             
             <!-- Option 1: Named Ranges -->
-            <div class="range-option">
+            <div id="rangeOption1" class="range-option">
               <div class="range-option-header">
                 <span class="range-option-number">1</span>
                 <span class="range-option-title">Named Range</span>
@@ -1331,7 +1364,7 @@
             </div>
             
             <!-- Option 2: Auto-detect -->
-            <div class="range-option">
+            <div id="rangeOption2" class="range-option">
               <div class="range-option-header">
                 <span class="range-option-number">2</span>
                 <span class="range-option-title">Auto-detect</span>
@@ -1344,7 +1377,7 @@
             </div>
             
             <!-- Option 3: Manual Selection -->
-            <div class="range-option">
+            <div id="rangeOption3" class="range-option">
               <div class="range-option-header">
                 <span class="range-option-number">3</span>
                 <span class="range-option-title">Select Cells</span>
@@ -1719,11 +1752,27 @@
       });
     }
 
+    // ============================================================================
+    // RANGE OPTION SELECTION (MUTUALLY EXCLUSIVE)
+    // ============================================================================
+    function setActiveRangeOption(optionNumber) {
+      // Remove active class from all options
+      document.querySelectorAll('.range-option').forEach(opt => opt.classList.remove('active'));
+      
+      // Add active class to selected option
+      const selectedOption = document.getElementById(`rangeOption${optionNumber}`);
+      if (selectedOption) {
+        selectedOption.classList.add('active');
+      }
+    }
+
     function loadFromNamedRange() {
       const selector = document.getElementById('rangeSelector');
       const rangeName = selector.value;
       
       if (!rangeName) return;
+      
+      setActiveRangeOption(1); // Mark option 1 as active
       
       Excel.run(async (context) => {
         const namedRange = context.workbook.names.getItem(rangeName);
@@ -1767,6 +1816,8 @@
     }
 
     function autoDetectRange() {
+      setActiveRangeOption(2); // Mark option 2 as active
+      
       Excel.run(async (context) => {
         const activeCell = context.workbook.getActiveCell();
         const expandedRange = activeCell.getSurroundingRegion();
@@ -1781,6 +1832,8 @@
     }
 
     function useSelection() {
+      setActiveRangeOption(3); // Mark option 3 as active
+      
       Excel.run(async (context) => {
         const range = context.workbook.getSelectedRange();
         range.load(['address', 'values', 'rowCount', 'columnCount']);
