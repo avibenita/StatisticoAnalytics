@@ -718,13 +718,15 @@
                 <tr>
                   <th style="width: 30px;"></th>
                   <th>VARIABLE</th>
-                  <th class="center" style="width: 60px;">N</th>
+                  <th class="center" style="width: 50px;" title="Total observations">N</th>
+                  <th class="center" style="width: 50px;" title="Numeric values">nNum</th>
+                  <th class="center" style="width: 50px;" title="Categories">nCat</th>
                   <th class="center" style="width: 150px;">ASSIGN TO</th>
                 </tr>
               </thead>
               <tbody id="variablesBody">
                 <tr>
-                  <td colspan="4" style="text-align: center; padding: 20px; color: var(--text-muted);">
+                  <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-muted);">
                     No data loaded. Select a range above.
                   </td>
                 </tr>
@@ -1110,14 +1112,25 @@
       const headers = values[0];
       const dataRows = values.slice(1);
       
-      // Build variables array
+      // Build variables array with enhanced statistics
       STATE.variables = headers.map((header, colIdx) => {
         const columnData = dataRows.map(row => row[colIdx]);
         const validData = columnData.filter(val => val !== null && val !== undefined && val !== '');
         
+        // Count numeric vs non-numeric values
+        const numericData = validData.filter(val => {
+          const num = Number(val);
+          return !isNaN(num);
+        });
+        
+        // Get unique values for category count
+        const uniqueValues = [...new Set(validData)];
+        
         return {
           name: header || `Column${colIdx + 1}`,
           n: validData.length,
+          nNum: numericData.length,
+          nCat: uniqueValues.length,
           data: columnData,
           colIdx: colIdx
         };
@@ -1154,7 +1167,31 @@
         const tdN = document.createElement('td');
         tdN.textContent = variable.n;
         tdN.style.textAlign = 'center';
+        tdN.style.color = 'var(--text-secondary)';
         tr.appendChild(tdN);
+        
+        // nNum (numeric count)
+        const tdNNum = document.createElement('td');
+        tdNNum.textContent = variable.nNum;
+        tdNNum.style.textAlign = 'center';
+        tdNNum.style.fontWeight = '600';
+        tdNNum.style.color = variable.nNum === variable.n ? 'var(--accent-2)' : 'var(--text-muted)';
+        tr.appendChild(tdNNum);
+        
+        // nCat (unique categories)
+        const tdNCat = document.createElement('td');
+        tdNCat.textContent = variable.nCat;
+        tdNCat.style.textAlign = 'center';
+        tdNCat.style.fontWeight = '600';
+        // Color based on category count: few = good for categorical, many = numeric
+        if (variable.nCat <= 10) {
+          tdNCat.style.color = 'var(--accent-3)'; // Green - good for categorical
+        } else if (variable.nCat <= 20) {
+          tdNCat.style.color = 'var(--accent-1)'; // Orange - borderline
+        } else {
+          tdNCat.style.color = 'var(--text-muted)'; // Gray - too many for categorical
+        }
+        tr.appendChild(tdNCat);
         
         // Assign buttons with tooltips
         const tdAssign = document.createElement('td');
