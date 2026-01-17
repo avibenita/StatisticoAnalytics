@@ -709,10 +709,11 @@
       border: 2px solid #ffd43b;
       border-radius: 8px;
       padding: 16px;
-      min-width: 320px;
-      max-width: 450px;
-      max-height: 80vh;
-      overflow-y: auto;
+      min-width: 380px;
+      max-width: 480px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
       z-index: 2001;
       opacity: 0;
       visibility: hidden;
@@ -731,30 +732,37 @@
       align-items: center;
       gap: 10px;
       color: #ffd43b;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
-      margin-bottom: 12px;
-      padding-bottom: 10px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
       border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
     }
 
     .warning-icon {
-      font-size: 24px;
+      font-size: 20px;
     }
 
     .warning-content {
-      font-size: 12px;
-      line-height: 1.5;
+      font-size: 11px;
+      line-height: 1.4;
       color: var(--text-secondary);
-      margin-bottom: 12px;
+      margin-bottom: 10px;
+      flex-shrink: 0;
+    }
+
+    .warning-content p {
+      margin: 4px 0;
     }
 
     .warning-actions {
       display: flex;
       gap: 8px;
-      margin-top: 16px;
-      padding-top: 12px;
+      margin-top: 10px;
+      padding-top: 10px;
       border-top: 1px solid var(--border);
+      flex-shrink: 0;
     }
 
     .warning-btn {
@@ -789,23 +797,59 @@
     }
 
     /* Category Selection UI */
+    .category-selector-wrapper {
+      color: var(--accent-3);
+      font-weight: 700;
+      margin-top: 10px;
+      margin-bottom: 8px;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
     .category-selector {
-      max-height: 300px;
+      max-height: 280px;
       overflow-y: auto;
+      overflow-x: hidden;
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 8px;
+      padding: 6px;
       background: var(--surface-0);
-      margin-top: 12px;
+      margin-bottom: 8px;
+      flex: 1;
+      min-height: 120px;
+    }
+
+    .category-selector::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .category-selector::-webkit-scrollbar-track {
+      background: var(--surface-1);
+      border-radius: 4px;
+    }
+
+    .category-selector::-webkit-scrollbar-thumb {
+      background: var(--accent-3);
+      border-radius: 4px;
+    }
+
+    .category-selector::-webkit-scrollbar-thumb:hover {
+      background: #4CAF50;
     }
 
     .category-select-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
-      padding-bottom: 8px;
+      margin-bottom: 6px;
+      padding-bottom: 6px;
       border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .category-select-header-text {
+      font-size: 10px;
+      color: var(--text-muted);
     }
 
     .select-all-btns {
@@ -814,11 +858,11 @@
     }
 
     .select-toggle-btn {
-      padding: 4px 10px;
-      font-size: 10px;
+      padding: 3px 8px;
+      font-size: 9px;
       background: var(--surface-2);
       border: 1px solid var(--border);
-      border-radius: 4px;
+      border-radius: 3px;
       color: var(--text-secondary);
       cursor: pointer;
       transition: all 0.2s;
@@ -832,10 +876,10 @@
     .category-checkbox-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 8px;
-      border-radius: 4px;
-      margin-bottom: 4px;
+      gap: 8px;
+      padding: 5px 6px;
+      border-radius: 3px;
+      margin-bottom: 3px;
       cursor: pointer;
       transition: background 0.2s;
     }
@@ -845,10 +889,11 @@
     }
 
     .category-checkbox-row input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
       cursor: pointer;
       accent-color: var(--accent-3);
+      flex-shrink: 0;
     }
 
     .category-checkbox-label {
@@ -856,8 +901,9 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 12px;
+      font-size: 11px;
       cursor: pointer;
+      min-width: 0;
     }
 
     .category-name {
@@ -872,9 +918,10 @@
     .category-stats {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       color: var(--text-muted);
-      font-size: 11px;
+      font-size: 10px;
+      flex-shrink: 0;
     }
 
     .category-count {
@@ -883,11 +930,12 @@
     }
 
     .category-bar-mini {
-      width: 60px;
-      height: 6px;
+      width: 50px;
+      height: 5px;
       background: var(--surface-2);
       border-radius: 3px;
       overflow: hidden;
+      flex-shrink: 0;
     }
 
     .category-bar-fill-mini {
@@ -897,13 +945,14 @@
     }
 
     .selection-summary {
-      margin-top: 10px;
-      padding: 8px;
+      margin-top: 8px;
+      padding: 6px;
       background: var(--surface-2);
       border-radius: 4px;
-      font-size: 11px;
+      font-size: 10px;
       color: var(--text-secondary);
       text-align: center;
+      flex-shrink: 0;
     }
 
     .selection-summary.valid {
@@ -1773,36 +1822,31 @@
       
       let html = `
         <div class="warning-header">
-          <span class="warning-icon">⚠️</span>
-          <span>Select Categories for ${variable.name}</span>
+          <span class="warning-icon">📋</span>
+          <span>Select Categories: ${variable.name}</span>
         </div>
         
         <div class="warning-content">
-          <p><strong>${variable.name}</strong> has <strong>${variable.nUnique} unique categories</strong>.</p>
-          <p style="font-size: 11px; color: var(--text-muted);">Select which categories to include in the model. Selected categories will create ${Math.max(0, selectedCats.length - 1)} dummy variables.</p>
+          <p><strong>${variable.nUnique} categories</strong> available. Choose which to include in the model.</p>
         </div>
+        
+        <div class="category-selector-wrapper">
+          <div class="category-select-header">
+            <span class="category-select-header-text">Category (Count)</span>
+            <div class="select-all-btns">
+              <button class="select-toggle-btn" onclick="toggleAllCategories('${variable.name}', true)">All</button>
+              <button class="select-toggle-btn" onclick="toggleAllCategories('${variable.name}', false)">None</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="category-selector" id="categorySelector">
       `;
       
       // Category selector with checkboxes
       if (variable.freqTable && variable.freqTable.length > 0) {
         const totalForPercent = variable.n;
         const maxFreq = Math.max(...variable.freqTable.map(([_, count]) => count));
-        
-        html += `
-          <div style="color: var(--accent-3); font-weight: 700; margin-top: 12px; margin-bottom: 6px; font-size: 12px;">
-            📋 Select Categories to Include
-          </div>
-          
-          <div class="category-select-header">
-            <span style="font-size: 11px; color: var(--text-muted);">Category (Count)</span>
-            <div class="select-all-btns">
-              <button class="select-toggle-btn" onclick="toggleAllCategories('${variable.name}', true)">Select All</button>
-              <button class="select-toggle-btn" onclick="toggleAllCategories('${variable.name}', false)">Clear All</button>
-            </div>
-          </div>
-          
-          <div class="category-selector" id="categorySelector">
-        `;
         
         variable.freqTable.forEach(([category, count]) => {
           const percent = ((count / totalForPercent) * 100).toFixed(1);
@@ -1819,7 +1863,7 @@
                      ${isChecked ? 'checked' : ''}
                      onclick="event.stopPropagation()">
               <label class="category-checkbox-label" for="${catId}">
-                <span class="category-name" title="${String(category)}">${String(category).substring(0, 30)}</span>
+                <span class="category-name" title="${String(category)}">${String(category).substring(0, 25)}</span>
                 <div class="category-stats">
                   <span class="category-count">${count}</span>
                   <span>(${percent}%)</span>
@@ -1831,13 +1875,9 @@
             </div>
           `;
         });
-        
-        html += '</div>';
-        
-        if (variable.nUnique > variable.freqTable.length) {
-          html += `<div style="color: var(--text-muted); font-size: 10px; margin-top: 6px; text-align: center;">Showing top ${variable.freqTable.length} of ${variable.nUnique} categories</div>`;
-        }
       }
+      
+      html += '</div>'; // Close category-selector
       
       html += `
         <div class="selection-summary" id="selectionSummary">
@@ -1849,7 +1889,7 @@
             <i class="fa-solid fa-times"></i> Cancel
           </button>
           <button class="warning-btn confirm" id="confirmBtn" onclick="confirmCategoryAssignment(${varIdx})">
-            <i class="fa-solid fa-check"></i> Confirm Selection
+            <i class="fa-solid fa-check"></i> Confirm
           </button>
         </div>
       `;
@@ -1948,8 +1988,8 @@
         isAlreadyInThisBucket = STATE.assignments.xc.includes(variable.name);
       }
       
-      // Category selector for Xc with > 5 categories (always show, even if already assigned)
-      if (bucket === 'xc' && variable.nUnique > 5) {
+      // Category selector for ALL Xc assignments (always show selector)
+      if (bucket === 'xc') {
         showCategoryWarning(variable, varIdx);
         return; // Don't assign yet, wait for user confirmation
       }
