@@ -1193,25 +1193,31 @@
     }
 
     // ============================================================================
-    // VARIABLE ASSIGNMENT
+    // VARIABLE ASSIGNMENT (MUTUALLY EXCLUSIVE)
     // ============================================================================
     function assignVariable(varIdx, bucket) {
       const variable = STATE.variables[varIdx];
       
+      // Check if already assigned to THIS specific bucket (for toggle behavior)
+      let isAlreadyInThisBucket = false;
       if (bucket === 'y') {
-        STATE.assignments.y = variable.name;
+        isAlreadyInThisBucket = STATE.assignments.y === variable.name;
       } else if (bucket === 'xn') {
-        const idx = STATE.assignments.xn.indexOf(variable.name);
-        if (idx >= 0) {
-          STATE.assignments.xn.splice(idx, 1);
-        } else {
-          STATE.assignments.xn.push(variable.name);
-        }
+        isAlreadyInThisBucket = STATE.assignments.xn.includes(variable.name);
       } else if (bucket === 'xc') {
-        const idx = STATE.assignments.xc.indexOf(variable.name);
-        if (idx >= 0) {
-          STATE.assignments.xc.splice(idx, 1);
-        } else {
+        isAlreadyInThisBucket = STATE.assignments.xc.includes(variable.name);
+      }
+      
+      // Remove from all buckets first (ensures mutual exclusivity)
+      removeVariableFromAllAssignments(variable.name);
+      
+      // If it WASN'T in this bucket, add it (if it WAS, leave it removed - toggle off)
+      if (!isAlreadyInThisBucket) {
+        if (bucket === 'y') {
+          STATE.assignments.y = variable.name;
+        } else if (bucket === 'xn') {
+          STATE.assignments.xn.push(variable.name);
+        } else if (bucket === 'xc') {
           STATE.assignments.xc.push(variable.name);
         }
       }
@@ -1219,6 +1225,25 @@
       renderVariablesTable();
       updateBucketDisplay();
       updateMaxCases();
+    }
+    
+    function removeVariableFromAllAssignments(varName) {
+      // Remove from Y
+      if (STATE.assignments.y === varName) {
+        STATE.assignments.y = null;
+      }
+      
+      // Remove from Xn
+      const xnIdx = STATE.assignments.xn.indexOf(varName);
+      if (xnIdx >= 0) {
+        STATE.assignments.xn.splice(xnIdx, 1);
+      }
+      
+      // Remove from Xc
+      const xcIdx = STATE.assignments.xc.indexOf(varName);
+      if (xcIdx >= 0) {
+        STATE.assignments.xc.splice(xcIdx, 1);
+      }
     }
 
     function updateBucketDisplay() {
@@ -1258,15 +1283,8 @@
     }
 
     function removeAssignment(varName, bucket) {
-      if (bucket === 'y') {
-        STATE.assignments.y = null;
-      } else if (bucket === 'xn') {
-        const idx = STATE.assignments.xn.indexOf(varName);
-        if (idx >= 0) STATE.assignments.xn.splice(idx, 1);
-      } else if (bucket === 'xc') {
-        const idx = STATE.assignments.xc.indexOf(varName);
-        if (idx >= 0) STATE.assignments.xc.splice(idx, 1);
-      }
+      // Simply remove from all assignments (already exclusive)
+      removeVariableFromAllAssignments(varName);
       
       renderVariablesTable();
       updateBucketDisplay();
