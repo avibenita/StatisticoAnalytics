@@ -699,6 +699,95 @@
       visibility: visible;
     }
 
+    /* Warning Modal for Xc with many categories */
+    .warning-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      background: var(--surface-1);
+      border: 2px solid #ffd43b;
+      border-radius: 8px;
+      padding: 16px;
+      min-width: 320px;
+      max-width: 450px;
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 2001;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
+    }
+
+    .warning-modal.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .warning-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #ffd43b;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .warning-icon {
+      font-size: 24px;
+    }
+
+    .warning-content {
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .warning-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .warning-btn {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .warning-btn.confirm {
+      background: linear-gradient(135deg, var(--accent-3), #4CAF50);
+      color: #000;
+    }
+
+    .warning-btn.confirm:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(152, 195, 121, 0.4);
+    }
+
+    .warning-btn.cancel {
+      background: var(--surface-2);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .warning-btn.cancel:hover {
+      background: var(--surface-0);
+    }
+
     .tooltip-title {
       color: var(--accent-1);
       font-weight: 700;
@@ -1109,6 +1198,10 @@
   <!-- Variable Stats Panel (Modal) -->
   <div id="varStatsOverlay" class="var-stats-overlay" onclick="hideVariableStats()"></div>
   <div id="varStatsTooltip" class="var-stats-tooltip"></div>
+
+  <!-- Warning Modal for Xc with many categories -->
+  <div id="warningOverlay" class="var-stats-overlay"></div>
+  <div id="warningModal" class="warning-modal"></div>
 
   <script>
     // ============================================================================
@@ -1525,6 +1618,93 @@
       tooltip.classList.remove('show');
       overlay.classList.remove('show');
     }
+    
+    // ============================================================================
+    // CATEGORY WARNING MODAL
+    // ============================================================================
+    function showCategoryWarning(variable, varIdx) {
+      const modal = document.getElementById('warningModal');
+      const overlay = document.getElementById('warningOverlay');
+      
+      let html = `
+        <div class="warning-header">
+          <span class="warning-icon">⚠️</span>
+          <span>Many Categories Detected</span>
+        </div>
+        
+        <div class="warning-content">
+          <p><strong>${variable.name}</strong> has <strong>${variable.nUnique} unique categories</strong>.</p>
+          <p>Categorical variables with many categories will create ${variable.nUnique - 1} dummy variables, which may:</p>
+          <ul style="margin: 8px 0; padding-left: 20px;">
+            <li>Reduce degrees of freedom significantly</li>
+            <li>Cause overfitting with limited data</li>
+            <li>Make interpretation difficult</li>
+          </ul>
+          <p style="margin-top: 12px;"><strong>Recommendation:</strong> Consider grouping categories or using as numeric (Xn) if ordinal.</p>
+        </div>
+      `;
+      
+      // Show frequency table if available
+      if (variable.freqTable && variable.freqTable.length > 0) {
+        const totalForPercent = variable.n;
+        const maxFreq = Math.max(...variable.freqTable.map(([_, count]) => count));
+        
+        html += `
+          <div style="color: var(--accent-3); font-weight: 700; margin-top: 12px; margin-bottom: 6px; font-size: 12px;">
+            📋 Category Distribution
+          </div>
+          <div class="freq-table" style="max-height: 200px; overflow-y: auto;">
+        `;
+        
+        variable.freqTable.forEach(([category, count]) => {
+          const percent = ((count / totalForPercent) * 100).toFixed(1);
+          const barWidth = (count / maxFreq * 100);
+          html += `
+            <div class="freq-row">
+              <span class="freq-category">${String(category).substring(0, 20)}</span>
+              <span class="freq-count">${count} (${percent}%)</span>
+              <div class="freq-bar">
+                <div class="freq-bar-fill" style="width: ${barWidth}%"></div>
+              </div>
+            </div>
+          `;
+        });
+        
+        html += '</div>';
+        
+        if (variable.nUnique > 10) {
+          html += `<div style="color: var(--text-muted); font-size: 10px; margin-top: 6px; text-align: center;">Showing top 10 of ${variable.nUnique} categories</div>`;
+        }
+      }
+      
+      html += `
+        <div class="warning-actions">
+          <button class="warning-btn cancel" onclick="closeCategoryWarning()">
+            <i class="fa-solid fa-times"></i> Cancel
+          </button>
+          <button class="warning-btn confirm" onclick="confirmCategoryAssignment(${varIdx})">
+            <i class="fa-solid fa-check"></i> Assign Anyway
+          </button>
+        </div>
+      `;
+      
+      modal.innerHTML = html;
+      modal.classList.add('show');
+      overlay.classList.add('show');
+    }
+    
+    function closeCategoryWarning() {
+      const modal = document.getElementById('warningModal');
+      const overlay = document.getElementById('warningOverlay');
+      modal.classList.remove('show');
+      overlay.classList.remove('show');
+    }
+    
+    function confirmCategoryAssignment(varIdx) {
+      const variable = STATE.variables[varIdx];
+      closeCategoryWarning();
+      performAssignment(variable.name, 'xc', false);
+    }
 
     // ============================================================================
     // VARIABLE ASSIGNMENT (MUTUALLY EXCLUSIVE)
@@ -1542,17 +1722,28 @@
         isAlreadyInThisBucket = STATE.assignments.xc.includes(variable.name);
       }
       
+      // Warning for Xc with > 5 categories
+      if (bucket === 'xc' && !isAlreadyInThisBucket && variable.nUnique > 5) {
+        showCategoryWarning(variable, varIdx);
+        return; // Don't assign yet, wait for user confirmation
+      }
+      
+      // Proceed with assignment
+      performAssignment(variable.name, bucket, isAlreadyInThisBucket);
+    }
+    
+    function performAssignment(varName, bucket, wasInBucket) {
       // Remove from all buckets first (ensures mutual exclusivity)
-      removeVariableFromAllAssignments(variable.name);
+      removeVariableFromAllAssignments(varName);
       
       // If it WASN'T in this bucket, add it (if it WAS, leave it removed - toggle off)
-      if (!isAlreadyInThisBucket) {
+      if (!wasInBucket) {
         if (bucket === 'y') {
-          STATE.assignments.y = variable.name;
+          STATE.assignments.y = varName;
         } else if (bucket === 'xn') {
-          STATE.assignments.xn.push(variable.name);
+          STATE.assignments.xn.push(varName);
         } else if (bucket === 'xc') {
-          STATE.assignments.xc.push(variable.name);
+          STATE.assignments.xc.push(varName);
         }
       }
       
