@@ -650,6 +650,107 @@
       display: inline-block;
       animation: spin 1s linear infinite;
     }
+
+    /* Variable Stats Tooltip */
+    .var-stats-tooltip {
+      position: absolute;
+      background: var(--surface-2);
+      border: 2px solid var(--accent-1);
+      border-radius: 8px;
+      padding: 12px;
+      min-width: 250px;
+      max-width: 350px;
+      z-index: 2000;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .var-stats-tooltip.show {
+      opacity: 1;
+    }
+
+    .tooltip-title {
+      color: var(--accent-1);
+      font-weight: 700;
+      font-size: 12px;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      color: var(--text-secondary);
+    }
+
+    .stat-row .label {
+      font-weight: 600;
+    }
+
+    .stat-row .value {
+      color: var(--text-primary);
+      font-family: 'Courier New', monospace;
+    }
+
+    .freq-table {
+      margin-top: 6px;
+      width: 100%;
+    }
+
+    .freq-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 6px;
+      background: var(--surface-0);
+      margin: 2px 0;
+      border-radius: 4px;
+    }
+
+    .freq-row:nth-child(even) {
+      background: var(--surface-1);
+    }
+
+    .freq-category {
+      font-weight: 600;
+      color: var(--accent-2);
+      flex: 1;
+    }
+
+    .freq-count {
+      font-family: 'Courier New', monospace;
+      color: var(--text-primary);
+      margin: 0 8px;
+    }
+
+    .freq-bar {
+      flex: 0 0 60px;
+      height: 16px;
+      background: var(--surface-2);
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .freq-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-3), var(--accent-2));
+      transition: width 0.3s;
+    }
+
+    .variables-table tbody tr {
+      position: relative;
+    }
+
+    .variables-table tbody tr:hover {
+      background: rgba(255, 165, 120, 0.05);
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -960,6 +1061,9 @@
     </div>
   </div>
 
+  <!-- Variable Stats Tooltip -->
+  <div id="varStatsTooltip" class="var-stats-tooltip"></div>
+
   <script>
     // ============================================================================
     // STATE MANAGEMENT
@@ -1120,27 +1224,73 @@
         // Count numeric vs non-numeric (categorical) observations
         let numericCount = 0;
         let categoricalCount = 0;
+        const numericValues = [];
+        const categoricalValues = [];
         
         validData.forEach(val => {
           const num = Number(val);
           if (!isNaN(num)) {
             numericCount++;
+            numericValues.push(num);
           } else {
             categoricalCount++;
+            categoricalValues.push(val);
           }
         });
         
         // Get unique values for reference
         const uniqueValues = [...new Set(validData)];
         
+        // Calculate descriptive statistics for numeric data
+        let stats = null;
+        if (numericValues.length > 0) {
+          const sorted = numericValues.slice().sort((a, b) => a - b);
+          const sum = numericValues.reduce((acc, val) => acc + val, 0);
+          const mean = sum / numericValues.length;
+          const variance = numericValues.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / numericValues.length;
+          const sd = Math.sqrt(variance);
+          
+          const q1Index = Math.floor(sorted.length * 0.25);
+          const medianIndex = Math.floor(sorted.length * 0.5);
+          const q3Index = Math.floor(sorted.length * 0.75);
+          
+          stats = {
+            mean: mean,
+            sd: sd,
+            min: sorted[0],
+            q1: sorted[q1Index],
+            median: sorted[medianIndex],
+            q3: sorted[q3Index],
+            max: sorted[sorted.length - 1]
+          };
+        }
+        
+        // Calculate frequency table for categorical data
+        let freqTable = null;
+        if (categoricalValues.length > 0 || (numericValues.length > 0 && uniqueValues.length <= 20)) {
+          // Use all valid data for frequency table if few unique values
+          const dataForFreq = uniqueValues.length <= 20 ? validData : categoricalValues;
+          const frequencies = {};
+          dataForFreq.forEach(val => {
+            frequencies[val] = (frequencies[val] || 0) + 1;
+          });
+          
+          // Sort by frequency descending
+          freqTable = Object.entries(frequencies)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10); // Top 10 categories
+        }
+        
         return {
           name: header || `Column${colIdx + 1}`,
           n: validData.length,
           nNum: numericCount,
           nCat: categoricalCount,
-          nUnique: uniqueValues.length, // Store unique count for later use
+          nUnique: uniqueValues.length,
           data: columnData,
-          colIdx: colIdx
+          colIdx: colIdx,
+          stats: stats,
+          freqTable: freqTable
         };
       });
       
@@ -1234,8 +1384,90 @@
         tdAssign.appendChild(btnXc);
         
         tr.appendChild(tdAssign);
+        
+        // Add hover listeners for stats tooltip
+        tr.addEventListener('mouseenter', (e) => showVariableStats(e, variable));
+        tr.addEventListener('mouseleave', hideVariableStats);
+        tr.addEventListener('mousemove', (e) => updateTooltipPosition(e));
+        
         tbody.appendChild(tr);
       });
+    }
+    
+    // ============================================================================
+    // VARIABLE STATS TOOLTIP
+    // ============================================================================
+    function showVariableStats(event, variable) {
+      const tooltip = document.getElementById('varStatsTooltip');
+      
+      let html = `<div class="tooltip-title">${variable.name}</div>`;
+      
+      // Show numeric statistics if available
+      if (variable.stats && variable.nNum > 0) {
+        html += `
+          <div style="color: var(--accent-2); font-weight: 700; margin-top: 8px; margin-bottom: 4px;">
+            📊 Numeric Statistics (n=${variable.nNum})
+          </div>
+          <div class="stat-row"><span class="label">Mean:</span><span class="value">${variable.stats.mean.toFixed(2)}</span></div>
+          <div class="stat-row"><span class="label">Std Dev:</span><span class="value">${variable.stats.sd.toFixed(2)}</span></div>
+          <div class="stat-row"><span class="label">Min:</span><span class="value">${variable.stats.min.toFixed(2)}</span></div>
+          <div class="stat-row"><span class="label">Q1:</span><span class="value">${variable.stats.q1.toFixed(2)}</span></div>
+          <div class="stat-row"><span class="label">Median:</span><span class="value">${variable.stats.median.toFixed(2)}</span></div>
+          <div class="stat-row"><span class="label">Q3:</span><span class="value">${variable.stats.q3.toFixed(2)}</span></div>
+          <div class="stat-row"><span class="label">Max:</span><span class="value">${variable.stats.max.toFixed(2)}</span></div>
+        `;
+      }
+      
+      // Show frequency table if available
+      if (variable.freqTable && variable.freqTable.length > 0) {
+        const totalForPercent = variable.n;
+        const maxFreq = Math.max(...variable.freqTable.map(([_, count]) => count));
+        
+        html += `
+          <div style="color: var(--accent-3); font-weight: 700; margin-top: 12px; margin-bottom: 6px;">
+            📋 Frequency Table (n=${variable.nCat > 0 ? variable.nCat : variable.n})
+          </div>
+          <div class="freq-table">
+        `;
+        
+        variable.freqTable.forEach(([category, count]) => {
+          const percent = ((count / totalForPercent) * 100).toFixed(1);
+          const barWidth = (count / maxFreq * 100);
+          html += `
+            <div class="freq-row">
+              <span class="freq-category">${String(category).substring(0, 20)}</span>
+              <span class="freq-count">${count} (${percent}%)</span>
+              <div class="freq-bar">
+                <div class="freq-bar-fill" style="width: ${barWidth}%"></div>
+              </div>
+            </div>
+          `;
+        });
+        
+        html += '</div>';
+        
+        if (variable.nUnique > 10) {
+          html += `<div style="color: var(--text-muted); font-size: 10px; margin-top: 6px; text-align: center;">Showing top 10 of ${variable.nUnique} categories</div>`;
+        }
+      }
+      
+      tooltip.innerHTML = html;
+      updateTooltipPosition(event);
+      tooltip.classList.add('show');
+    }
+    
+    function hideVariableStats() {
+      const tooltip = document.getElementById('varStatsTooltip');
+      tooltip.classList.remove('show');
+    }
+    
+    function updateTooltipPosition(event) {
+      const tooltip = document.getElementById('varStatsTooltip');
+      const x = event.clientX + 15;
+      const y = event.clientY + 15;
+      
+      tooltip.style.left = x + 'px';
+      tooltip.style.top = y + 'px';
     }
 
     // ============================================================================
