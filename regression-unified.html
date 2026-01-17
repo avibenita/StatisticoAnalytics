@@ -403,55 +403,52 @@
 
     .bucket-header {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
-      padding: 10px 8px;
-      font-size: 11px;
+      justify-content: space-between;
+      padding: 8px 10px;
+      font-size: 10px;
       font-weight: 700;
       border-bottom: 1px solid var(--border);
       gap: 6px;
     }
 
     .bucket-header.y-header {
-      background: linear-gradient(180deg, rgba(255, 165, 120, 0.2), rgba(255, 165, 120, 0.05));
+      background: linear-gradient(135deg, rgba(255, 165, 120, 0.2), rgba(255, 165, 120, 0.05));
       color: var(--accent-1);
       border-bottom-color: rgba(255, 165, 120, 0.4);
     }
 
     .bucket-header.xn-header {
-      background: linear-gradient(180deg, rgba(120, 200, 255, 0.2), rgba(120, 200, 255, 0.05));
+      background: linear-gradient(135deg, rgba(120, 200, 255, 0.2), rgba(120, 200, 255, 0.05));
       color: var(--accent-2);
       border-bottom-color: rgba(120, 200, 255, 0.4);
     }
 
     .bucket-header.xc-header {
-      background: linear-gradient(180deg, rgba(152, 195, 121, 0.2), rgba(152, 195, 121, 0.05));
+      background: linear-gradient(135deg, rgba(152, 195, 121, 0.2), rgba(152, 195, 121, 0.05));
       color: var(--accent-3);
       border-bottom-color: rgba(152, 195, 121, 0.4);
+    }
+
+    .bucket-header i {
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .bucket-title-inline {
+      flex: 1;
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .bucket-title {
       display: flex;
       align-items: center;
       gap: 6px;
-    }
-
-    .bucket-title-vertical {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      text-align: center;
-      line-height: 1.2;
-    }
-
-    .bucket-title-vertical i {
-      font-size: 16px;
-    }
-
-    .bucket-title-vertical span {
-      font-size: 10px;
-      font-weight: 700;
     }
 
     .bucket-count {
@@ -1329,16 +1326,14 @@
             <i class="fa-solid fa-chart-line"></i> Model Assignment
           </div>
           
-          <!-- All 3 Buckets Side by Side -->
-          <div style="display: flex; gap: 8px; padding: 10px;">
+          <!-- All 3 Buckets in One Row -->
+          <div style="display: flex; gap: 6px; padding: 10px; align-items: stretch;">
             
             <!-- Y Bucket -->
             <div class="bucket-container" style="flex: 1;">
               <div class="bucket-header y-header">
-                <div class="bucket-title-vertical">
-                  <i class="fa-solid fa-bullseye"></i>
-                  <span>Y<br>(Response)</span>
-                </div>
+                <i class="fa-solid fa-bullseye"></i>
+                <span class="bucket-title-inline">Y (Response)</span>
                 <span class="bucket-count" id="countY">0</span>
               </div>
               <div class="bucket-content y-content" id="zoneY">
@@ -1349,10 +1344,8 @@
             <!-- Xn Bucket -->
             <div class="bucket-container" style="flex: 1;">
               <div class="bucket-header xn-header">
-                <div class="bucket-title-vertical">
-                  <i class="fa-solid fa-hashtag"></i>
-                  <span>X<br>(numeric)</span>
-                </div>
+                <i class="fa-solid fa-hashtag"></i>
+                <span class="bucket-title-inline">X (numeric)</span>
                 <span class="bucket-count" id="countXn">0</span>
               </div>
               <div class="bucket-content xn-content" id="zoneXn">
@@ -1363,10 +1356,8 @@
             <!-- Xc Bucket -->
             <div class="bucket-container" style="flex: 1;">
               <div class="bucket-header xc-header">
-                <div class="bucket-title-vertical">
-                  <i class="fa-solid fa-tags"></i>
-                  <span>X<br>(Categ.)</span>
-                </div>
+                <i class="fa-solid fa-tags"></i>
+                <span class="bucket-title-inline">X (Categ.)</span>
                 <span class="bucket-count" id="countXc">0</span>
               </div>
               <div class="bucket-content xc-content" id="zoneXc">
