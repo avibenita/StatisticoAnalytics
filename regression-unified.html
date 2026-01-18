@@ -37,7 +37,7 @@
       color: var(--text-primary);
       font: 14px/1.45 'Segoe UI', Arial, sans-serif;
       overflow: hidden;
-      min-width: 750px;
+      min-width: 320px; /* Allow narrow task panes */
     }
 
     /* === TWO-PANEL LAYOUT === */
@@ -49,8 +49,9 @@
 
     /* LEFT PANEL - Input */
     .left-panel {
-      width: 420px;
-      flex-shrink: 0;
+      width: 100%;
+      max-width: 100%;
+      flex: 1;
       background: var(--surface-1);
       border-right: 1px solid var(--border);
       display: flex;
@@ -92,10 +93,10 @@
     .left-content {
       flex: 1;
       overflow-y: auto;
-      padding: 10px;
+      padding: clamp(8px, 2vw, 12px);
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: clamp(8px, 2vw, 12px);
     }
 
     /* === RIGHT PANEL CONTENT === */
@@ -115,7 +116,7 @@
 
     .section-title {
       color: var(--accent-1);
-      font-size: 13px;
+      font-size: clamp(11px, 2.5vw, 13px);
       font-weight: 700;
       margin-bottom: 8px;
       text-transform: uppercase;
@@ -1401,6 +1402,115 @@
       to {
         opacity: 1;
         transform: translateY(0);
+      }
+    }
+
+    /* ===================================================================== */
+    /* RESPONSIVE DESIGN - Mobile & Narrow Task Panes */
+    /* ===================================================================== */
+    
+    /* Adjust padding for narrow screens */
+    @media (max-width: 600px) {
+      .left-content {
+        padding: 8px;
+        gap: 8px;
+      }
+      
+      .left-header {
+        padding: 10px 8px;
+      }
+      
+      .section {
+        padding: 10px;
+      }
+    }
+
+    /* Make range options stack on very narrow screens */
+    @media (max-width: 480px) {
+      .range-options-container {
+        flex-direction: column !important;
+      }
+      
+      .range-option {
+        min-width: 100% !important;
+      }
+    }
+
+    /* Make buckets stack on narrow screens */
+    @media (max-width: 520px) {
+      .buckets-container {
+        flex-direction: column !important;
+        gap: 8px !important;
+      }
+      
+      .bucket {
+        min-height: 60px !important;
+      }
+    }
+
+    /* Responsive buttons */
+    @media (max-width: 400px) {
+      .btn {
+        font-size: 12px;
+        padding: 8px 12px;
+        min-height: 36px;
+      }
+      
+      .btn.alt {
+        padding: 6px 10px;
+        min-height: 32px;
+      }
+    }
+
+    /* Responsive table */
+    @media (max-width: 500px) {
+      .variables-table {
+        font-size: 11px;
+      }
+      
+      .variables-table th,
+      .variables-table td {
+        padding: 6px 4px;
+      }
+      
+      .var-assign-btn {
+        min-width: 32px;
+        font-size: 10px;
+        padding: 4px 6px;
+      }
+    }
+
+    /* Flexible container widths */
+    .range-options-container,
+    .buckets-container {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    /* Ensure scrollable areas work on all sizes */
+    .variables-table-container {
+      min-height: 150px;
+      max-height: min(250px, 40vh);
+    }
+
+    /* Responsive modal sizing */
+    @media (max-width: 700px) {
+      .vars-assign-modal {
+        width: 95vw !important;
+        max-width: 95vw !important;
+      }
+      
+      .warning-modal {
+        width: 90vw !important;
+        min-width: 90vw !important;
+        max-width: 90vw !important;
+      }
+    }
+
+    /* Responsive header */
+    @media (max-width: 400px) {
+      .left-header h1 {
+        font-size: 16px !important;
       }
     }
   </style>
