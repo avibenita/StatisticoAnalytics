@@ -535,6 +535,64 @@
       border-radius: 4px;
     }
 
+    /* Custom Tooltips for Range Buttons */
+    .range-btn[data-tooltip] {
+      position: relative;
+    }
+
+    .range-btn[data-tooltip]::before {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%) translateY(-4px);
+      background: linear-gradient(135deg, #2c3e50, #34495e);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      white-space: normal;
+      width: max-content;
+      max-width: 220px;
+      text-align: center;
+      line-height: 1.4;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      z-index: 10000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(120, 200, 255, 0.3);
+    }
+
+    .range-btn[data-tooltip]::after {
+      content: '';
+      position: absolute;
+      bottom: calc(100% + 2px);
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: #2c3e50;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      z-index: 10001;
+    }
+
+    .range-btn[data-tooltip]:hover::before,
+    .range-btn[data-tooltip]:hover::after {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .range-btn[data-tooltip]:disabled::before,
+    .range-btn[data-tooltip]:disabled::after {
+      display: none;
+    }
+
     .bucket-count {
       background: var(--surface-1);
       padding: 2px 8px;
@@ -1609,7 +1667,7 @@
             
             <!-- Button 1: Named Range (with dropdown) -->
             <div style="flex: 1; position: relative;">
-              <button id="namedRangeBtn" class="range-btn" onclick="toggleNamedRangeDropdown()">
+              <button id="namedRangeBtn" class="range-btn" onclick="toggleNamedRangeDropdown()" data-tooltip="Load data from a named range in your workbook">
                 <i class="fa-solid fa-bookmark"></i>
                 <span>Named Range</span>
                 <i class="fa-solid fa-chevron-down" style="margin-left: auto; font-size: 10px;"></i>
@@ -1625,13 +1683,13 @@
             </div>
             
             <!-- Button 2: Auto-detect -->
-            <button id="autoDetectBtn" class="range-btn" onclick="autoDetectRange()" style="flex: 1;">
+            <button id="autoDetectBtn" class="range-btn" onclick="autoDetectRange()" style="flex: 1;" data-tooltip="Automatically detect the used range on the active sheet">
               <i class="fa-solid fa-magic"></i>
               <span>Used Range</span>
             </button>
             
             <!-- Button 3: Selected Range -->
-            <button id="useSelectionBtn" class="range-btn" onclick="useSelection()" style="flex: 1;" disabled>
+            <button id="useSelectionBtn" class="range-btn" onclick="useSelection()" style="flex: 1;" disabled data-tooltip="Load data from the currently selected cells in Excel">
               <i class="fa-solid fa-check"></i>
               <span>Use Selection</span>
             </button>
