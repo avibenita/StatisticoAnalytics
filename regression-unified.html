@@ -1997,6 +1997,7 @@
           nNum: numericCount,
           nCat: categoricalCount,
           nUnique: uniqueValues.length,
+          uniqueValues: uniqueValues, // Store all unique values
           data: columnData,
           colIdx: colIdx,
           stats: stats,
@@ -2214,7 +2215,30 @@
       
       // Get existing selections or default to all categories
       const existingSelections = STATE.selectedCategories[variable.name];
-      const allCategories = variable.freqTable ? variable.freqTable.map(([cat, _]) => cat) : variable.uniqueCategories;
+      
+      // Safely get all categories - handle case where variable has no categorical data
+      let allCategories = [];
+      if (variable.freqTable && Array.isArray(variable.freqTable)) {
+        // Has frequency table - use it
+        allCategories = variable.freqTable.map(([cat, _]) => cat);
+      } else if (variable.uniqueValues && Array.isArray(variable.uniqueValues)) {
+        // No freq table but has unique values - use them
+        allCategories = variable.uniqueValues;
+      }
+      
+      // Check if variable is suitable for categorical use
+      if (allCategories.length === 0) {
+        console.error('No categories found for variable:', variable.name);
+        showStatus('error', `Cannot use "${variable.name}" as categorical - no category data available.`, 'left');
+        return;
+      }
+      
+      // Warn if too many unique values (might be better as numeric)
+      if (variable.nUnique > 50) {
+        console.warn(`Variable "${variable.name}" has ${variable.nUnique} unique values - may not be suitable as categorical`);
+        showStatus('warning', `⚠️ "${variable.name}" has ${variable.nUnique} unique values. Too many for categorical - consider using Xn.`, 'left');
+      }
+      
       const selectedCats = existingSelections || [...allCategories];
       console.log('Categories:', {allCategories, selectedCats});
       
