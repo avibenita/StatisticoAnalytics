@@ -2233,10 +2233,18 @@
         return;
       }
       
-      // Warn if too many unique values (might be better as numeric)
-      if (variable.nUnique > 50) {
-        console.warn(`Variable "${variable.name}" has ${variable.nUnique} unique values - may not be suitable as categorical`);
-        showStatus('warning', `⚠️ "${variable.name}" has ${variable.nUnique} unique values. Too many for categorical - consider using Xn.`, 'left');
+      // Block if too many unique values (not suitable for categorical)
+      const MAX_CATEGORIES = 50;
+      if (variable.nUnique > MAX_CATEGORIES) {
+        console.error(`Variable "${variable.name}" has ${variable.nUnique} unique values - too many for categorical`);
+        showStatus('error', `❌ "${variable.name}" has ${variable.nUnique} unique values. Maximum ${MAX_CATEGORIES} allowed for categorical. Use Xn instead.`, 'left');
+        return;
+      }
+      
+      // Warn if variable is purely numeric
+      if (variable.nCat === 0 && variable.nNum > 0) {
+        console.warn(`Variable "${variable.name}" is purely numeric - recommending Xn instead`);
+        showStatus('warning', `⚠️ "${variable.name}" is purely numeric with ${variable.nUnique} unique values. Consider using Xn (numeric predictor) instead.`, 'left');
       }
       
       const selectedCats = existingSelections || [...allCategories];
