@@ -879,6 +879,31 @@
       z-index: 2001;
     }
 
+    /* Subtle resize hint */
+    .resize-hint {
+      background: linear-gradient(135deg, rgba(120, 200, 255, 0.08), rgba(152, 195, 121, 0.08));
+      border-left: 3px solid rgba(120, 200, 255, 0.4);
+      padding: 6px 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
+      opacity: 0.8;
+      transition: opacity 0.3s ease;
+    }
+
+    .resize-hint:hover {
+      opacity: 1;
+      color: var(--accent-2);
+    }
+
+    .resize-hint i {
+      font-size: 10px;
+      color: var(--accent-2);
+    }
+
     /* Warning Modal for Xc with many categories */
     .warning-modal {
       position: fixed;
@@ -1552,14 +1577,14 @@
     <div class="left-panel full-width">
       <div class="card-head">
         <span><i class="fa-solid fa-sliders"></i> Multiple Regression (ANCOVA)</span>
-        <div style="display: flex; gap: 6px;">
-          <button class="btn alt" onclick="expandTaskPane()" style="width: auto; padding: 4px 8px; min-height: 28px; font-size: 11px;" title="Show how to widen this pane">
-            <i class="fa-solid fa-arrows-left-right"></i> Widen Pane
-          </button>
-          <button class="btn alt" onclick="clearAll()" style="width: auto; padding: 4px 8px; min-height: 28px; font-size: 11px;">
-            <i class="fa-solid fa-eraser"></i> Clear All
-          </button>
-        </div>
+        <button class="btn alt" onclick="clearAll()" style="width: auto; padding: 4px 8px; min-height: 28px; font-size: 11px;">
+          <i class="fa-solid fa-eraser"></i> Clear All
+        </button>
+      </div>
+      
+      <!-- Subtle resize hint -->
+      <div class="resize-hint">
+        <i class="fa-solid fa-info-circle"></i> Drag the left edge to resize this pane
       </div>
 
       <div class="left-content">
@@ -3307,23 +3332,6 @@
     // ============================================================================
     // UI CONTROLS
     // ============================================================================
-    function expandTaskPane() {
-      console.log('expandTaskPane() called');
-      
-      // Show instructions using the now-working showStatus
-      showStatus('info', '💡 <strong>Widen Pane:</strong> Hover over the <strong>LEFT edge</strong> of this pane, then <strong>DRAG right</strong>. Excel remembers your width!', 'left');
-      
-      // Add visual border hint on left edge
-      const container = document.querySelector('.main-container');
-      if (container) {
-        container.style.borderLeft = '4px solid var(--accent-3)';
-        container.style.transition = 'border-left 0.5s ease';
-        setTimeout(() => {
-          container.style.borderLeft = 'none';
-        }, 5000);
-      }
-    }
-    
     function clearAll() {
       console.log('clearAll() called');
       
