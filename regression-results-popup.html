@@ -66,8 +66,8 @@
       margin-bottom: 24px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
       position: relative;
-      overflow: hidden;
-      z-index: 10;
+      overflow: visible;
+      z-index: 50;
     }
 
     .header::before {
@@ -114,6 +114,9 @@
       align-items: center;
       gap: 8px;
       box-shadow: 0 2px 8px rgba(255, 100, 100, 0.2);
+      position: relative;
+      z-index: 101;
+      pointer-events: auto;
     }
 
     .close-btn:hover {
@@ -254,6 +257,7 @@
     .dropdown-container {
       position: relative;
       display: inline-block;
+      z-index: 100;
     }
 
     .dropdown-btn {
@@ -270,6 +274,9 @@
       gap: 8px;
       transition: all 0.3s ease;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      position: relative;
+      z-index: 101;
+      pointer-events: auto;
     }
 
     .dropdown-btn:hover {
@@ -304,10 +311,10 @@
       border: 2px solid rgba(120, 200, 255, 0.3);
       border-radius: 8px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
       min-width: 220px;
       display: none;
-      z-index: 1000;
+      z-index: 200;
+      pointer-events: auto;
     }
 
     .dropdown-container.open .dropdown-content {
@@ -376,7 +383,7 @@
       <h1><i class="fa-solid fa-chart-line"></i> <span id="pageTitle">Regression Results</span></h1>
       <div style="display: flex; gap: 12px; align-items: center;">
         <div class="dropdown-container" id="navDropdown">
-          <button class="dropdown-btn" id="dropdownBtn" onclick="toggleDropdown()">
+          <button class="dropdown-btn" id="dropdownBtn" onclick="console.log('📍 Button clicked!'); toggleDropdown(); return false;">
             <i class="fa-solid fa-bars"></i>
             Analysis Menu
             <span class="dropdown-arrow">▼</span>
@@ -431,6 +438,11 @@
       console.log('✅ Results popup initialized');
       console.log('📦 Office host:', info.host);
       
+      // Debug: Log all clicks
+      document.body.addEventListener('click', function(e) {
+        console.log('🖱️ Click detected on:', e.target.tagName, e.target.className, e.target.id);
+      }, true);
+      
       // Load results from localStorage (set by parent taskpane)
       loadResults();
       
@@ -458,7 +470,15 @@
     }
     
     function toggleDropdown() {
-      document.getElementById('navDropdown').classList.toggle('open');
+      console.log('🔽 toggleDropdown() called');
+      const dropdown = document.getElementById('navDropdown');
+      console.log('Dropdown element:', dropdown);
+      if (dropdown) {
+        dropdown.classList.toggle('open');
+        console.log('Dropdown classes:', dropdown.className);
+      } else {
+        console.error('❌ Dropdown element not found!');
+      }
     }
     
     function showView(viewName) {
