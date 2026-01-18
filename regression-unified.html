@@ -3218,10 +3218,14 @@
     }
 
     function showStatus(type, message, panel) {
+      console.log('showStatus called:', {type, message, panel});
       const statusId = panel === 'left' ? 'leftStatus' : 'rightStatus';
       const status = document.getElementById(statusId);
+      console.log('Status element:', status, 'statusId:', statusId);
+      
       if (!status) {
         console.error('Status element not found:', statusId);
+        alert(`ERROR: ${message}`); // Fallback to alert if status element missing
         return;
       }
       
@@ -3229,6 +3233,7 @@
       status.className = `status-msg ${type}`;
       status.innerHTML = message;
       status.style.display = 'block';
+      console.log('Status displayed:', status.className, status.style.display);
       
       // Auto-hide after delay (longer for errors/warnings so user can read)
       const hideDelay = (type === 'error' || type === 'warning') ? 8000 : 5000;
