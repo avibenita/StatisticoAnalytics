@@ -2287,7 +2287,14 @@
       const MAX_CATEGORIES = 50;
       if (variable.nUnique > MAX_CATEGORIES) {
         console.error(`Variable "${variable.name}" has ${variable.nUnique} unique values - too many for categorical`);
-        showStatus('error', `❌ "${variable.name}" has ${variable.nUnique} unique values. Maximum ${MAX_CATEGORIES} allowed for categorical. Use Xn instead.`, 'left');
+        console.log('>>> ABOUT TO CALL showStatus for error <<<');
+        try {
+          showStatus('error', `❌ "${variable.name}" has ${variable.nUnique} unique values. Maximum ${MAX_CATEGORIES} allowed for categorical. Use Xn instead.`, 'left');
+          console.log('>>> showStatus call completed <<<');
+        } catch (err) {
+          console.error('>>> showStatus threw error:', err);
+          alert(`ERROR: "${variable.name}" has ${variable.nUnique} unique values. Maximum ${MAX_CATEGORIES} allowed. Use Xn instead.`);
+        }
         return;
       }
       
