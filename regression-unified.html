@@ -205,6 +205,8 @@
       border: 1px solid var(--border);
       border-radius: 6px;
       background: var(--surface-0);
+      position: relative;
+      z-index: 1;
     }
 
     .variables-table-container::-webkit-scrollbar {
@@ -1168,6 +1170,8 @@
       border-radius: 6px;
       margin-bottom: 16px;
       flex-shrink: 0;
+      position: relative;
+      z-index: 10;
     }
 
     .info-row {
@@ -1189,6 +1193,7 @@
       overflow-x: hidden;
       padding: 16px 20px;
       min-height: 300px;
+      position: relative;
     }
 
     .vars-modal-content::-webkit-scrollbar {
