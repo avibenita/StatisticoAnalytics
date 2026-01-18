@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Descriptive Statistics</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/10.3.3/highcharts.js"></script>
@@ -680,13 +681,18 @@
     <!-- Main stats table -->
     <div class="panel">
       <div class="panel-header">
-        Descriptive Statistics
-        <div class="control-group">
+        <div style="display: flex; align-items: center; gap: 15px;">
+          <span>Descriptive Statistics</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 15px;">
           <div class="decimal-control">
             <label for="decimal-places">Decimals:</label>
             <input type="range" id="decimal-places" min="0" max="4" value="2" style="width: 80px;">
             <span id="decimal-value">2</span>
           </div>
+          <button onclick="closeDialog()" style="background: transparent; border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: all 0.2s;">
+            <i class="fa-solid fa-times"></i> Close
+          </button>
         </div>
       </div>
       <div class="panel-body">
@@ -927,6 +933,30 @@
   <div id="tooltip" class="tooltip" style="opacity: 0;"></div>
 
   <script>
+    // Office.js initialization
+    Office.initialize = function(reason) {
+      console.log('📊 Descriptive Statistics initialized');
+      // Wait for DOM to be ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeApp);
+      } else {
+        initializeApp();
+      }
+    };
+    
+    // Close dialog function
+    function closeDialog() {
+      console.log('🚪 Closing Descriptive Stats dialog...');
+      try {
+        if (Office.context.ui) {
+          Office.context.ui.messageParent('close');
+        }
+      } catch (err) {
+        console.error('Error closing dialog:', err);
+        window.close(); // Fallback
+      }
+    }
+    
     // Global variables
     let VarNameSelected = "";
     let data = [];
@@ -1539,9 +1569,50 @@
     }
 
     
+    // Load data from regression variables
+    function loadFromRegressionData() {
+      try {
+        const storedData = localStorage.getItem('descriptiveStatsData');
+        if (!storedData) {
+          console.log('⚠️ No regression data found, using sample data');
+          return generateSampleData();
+        }
+        
+        const regressionData = JSON.parse(storedData);
+        console.log('✅ Loaded regression data:', regressionData);
+        
+        if (!regressionData.variables || regressionData.variables.length === 0) {
+          console.log('⚠️ No variables in regression data, using sample data');
+          return generateSampleData();
+        }
+        
+        // Convert regression variables to descriptive stats format
+        return regressionData.variables.map(v => {
+          const stats = v.stats || {};
+          const validData = v.data ? v.data.filter(val => val !== null && val !== undefined && val !== '' && !isNaN(Number(val))).map(Number) : [];
+          
+          return {
+            Variable: v.name,
+            N: v.n || validData.length,
+            Mean: stats.mean || 0,
+            StdDev: stats.sd || 0,
+            Min: stats.min || (validData.length > 0 ? Math.min(...validData) : 0),
+            Median: stats.median || 0,
+            Max: stats.max || (validData.length > 0 ? Math.max(...validData) : 0),
+            Skew: 0, // Could calculate if needed
+            Kurt: 0, // Could calculate if needed
+            vector: validData
+          };
+        });
+      } catch (err) {
+        console.error('❌ Error loading regression data:', err);
+        return generateSampleData();
+      }
+    }
+    
     // Initialize application
-    function initialize() {
-      data = generateSampleData();
+    function initializeApp() {
+      data = loadFromRegressionData();
       if (data.length > 0) {
         handleRowClick(data[0]);
       }
@@ -1610,8 +1681,7 @@
       }
     }
 
-    // Start the application
-    initialize();
+    // Application will be initialized via Office.initialize
   </script>
 
   <script>

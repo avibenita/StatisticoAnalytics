@@ -3462,6 +3462,16 @@
     }
 
     function openDescriptiveStatsDialog() {
+      // Store current regression variables for descriptive stats to access
+      const descriptiveData = {
+        variables: STATE.variables,
+        assignments: STATE.assignments,
+        timestamp: new Date().toISOString()
+      };
+      
+      localStorage.setItem('descriptiveStatsData', JSON.stringify(descriptiveData));
+      console.log('💾 Descriptive stats data stored:', descriptiveData);
+      
       // Get the dialog URL for descriptive stats
       const dialogUrl = location.origin + location.pathname.replace(/[^/]*$/, '') + '0Descriptive_Stats.html';
       
