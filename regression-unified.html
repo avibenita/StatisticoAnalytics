@@ -3429,14 +3429,20 @@
                 window.regressionDialog.close();
                 window.regressionDialog = null;
               } else if (arg.message === 'openDescriptive') {
-                console.log('📊 Opening Descriptive Statistics dialog...');
-                // Close current regression results dialog
+                console.log('📊 Switching to Descriptive Statistics dialog...');
+                // Close current regression results dialog first
                 if (window.regressionDialog) {
                   window.regressionDialog.close();
                   window.regressionDialog = null;
+                  
+                  // Wait for dialog to close before opening new one
+                  setTimeout(function() {
+                    openDescriptiveStatsDialog();
+                  }, 500);
+                } else {
+                  // No dialog open, open directly
+                  openDescriptiveStatsDialog();
                 }
-                // Open descriptive stats dialog
-                openDescriptiveStatsDialog();
               }
             });
             
