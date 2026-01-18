@@ -30,7 +30,7 @@
 
   <DefaultSettings>
     <SourceLocation DefaultValue="https://www.statistico.live/StatisticoAnalytics/regression-unified.html"/>
-    <RequestedWidth>600</RequestedWidth>
+    <RequestedWidth>800</RequestedWidth>
   </DefaultSettings>
 
   <Permissions>ReadWriteDocument</Permissions>

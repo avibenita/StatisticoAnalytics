@@ -37,7 +37,7 @@
       color: var(--text-primary);
       font: 14px/1.45 'Segoe UI', Arial, sans-serif;
       overflow: hidden;
-      min-width: 600px;
+      min-width: 750px;
     }
 
     /* === TWO-PANEL LAYOUT === */
@@ -1325,9 +1325,14 @@
     <div class="left-panel full-width">
       <div class="card-head">
         <span><i class="fa-solid fa-sliders"></i> Multiple Regression (ANCOVA)</span>
-        <button class="btn alt" onclick="clearAll()" style="width: auto; padding: 4px 8px; min-height: 28px; font-size: 11px;">
-          <i class="fa-solid fa-eraser"></i> Clear All
-        </button>
+        <div style="display: flex; gap: 6px;">
+          <button class="btn alt" onclick="expandTaskPane()" style="width: auto; padding: 4px 8px; min-height: 28px; font-size: 11px;" title="Show how to widen this pane">
+            <i class="fa-solid fa-arrows-left-right"></i> Widen Pane
+          </button>
+          <button class="btn alt" onclick="clearAll()" style="width: auto; padding: 4px 8px; min-height: 28px; font-size: 11px;">
+            <i class="fa-solid fa-eraser"></i> Clear All
+          </button>
+        </div>
       </div>
 
       <div class="left-content">
@@ -3002,6 +3007,21 @@
     // ============================================================================
     // UI CONTROLS
     // ============================================================================
+    function expandTaskPane() {
+      // Show tooltip with instructions
+      showStatus('info', '💡 Tip: Hover over the LEFT edge of this pane, then DRAG right to make it wider!', 'left');
+      
+      // Add visual border hint on left edge
+      const container = document.querySelector('.main-container');
+      if (container) {
+        container.style.borderLeft = '3px solid var(--accent-3)';
+        container.style.transition = 'border-left 0.5s ease';
+        setTimeout(() => {
+          container.style.borderLeft = 'none';
+        }, 3000);
+      }
+    }
+    
     function clearAll() {
       if (!confirm('Clear all data and assignments?')) return;
       
