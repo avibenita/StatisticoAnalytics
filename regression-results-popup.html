@@ -29,18 +29,30 @@
     
     * { box-sizing: border-box; }
     html, body { 
+      min-height: 100vh;
       height: 100%; 
       margin: 0; 
       padding: 0;
       background: var(--surface-0);
       color: var(--text-primary);
       font: 14px/1.45 'Segoe UI', Arial, sans-serif;
+      overflow-x: hidden;
+      overflow-y: auto;
     }
 
     .results-container {
       padding: 20px;
       max-width: 1200px;
       margin: 0 auto;
+      min-height: 100vh;
+    }
+
+    #resultsContent {
+      position: relative;
+      z-index: 1;
+      min-height: 400px;
+      background: var(--surface-0);
+      border-radius: 8px;
     }
 
     .header {
@@ -55,6 +67,7 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
       position: relative;
       overflow: hidden;
+      z-index: 10;
     }
 
     .header::before {
@@ -202,7 +215,9 @@
     .loading {
       text-align: center;
       padding: 60px 20px;
-      color: var(--text-muted);
+      color: var(--text-primary);
+      font-size: 16px;
+      font-weight: 600;
     }
 
     .spinner {
