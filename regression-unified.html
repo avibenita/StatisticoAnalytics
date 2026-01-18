@@ -449,75 +449,90 @@
     }
 
     /* Range Options - 3 Panels in Row */
-    .range-options-container {
+    /* Range Picker Buttons */
+    .range-btn {
       display: flex;
-      gap: 8px;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-    }
-
-    .range-option {
-      flex: 1;
-      min-width: 110px;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 12px;
+      background: var(--surface-2);
       border: 2px solid var(--border);
       border-radius: 6px;
-      background: var(--surface-0);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
       transition: all 0.3s ease;
-      position: relative;
-      opacity: 0.6;
+      min-height: 44px;
+      white-space: nowrap;
     }
 
-    .range-option.active {
+    .range-btn:hover:not(:disabled) {
+      border-color: var(--accent-2);
+      background: linear-gradient(135deg, rgba(120, 200, 255, 0.15), var(--surface-2));
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .range-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .range-btn.active {
       border-color: var(--accent-3);
-      opacity: 1;
+      background: linear-gradient(135deg, rgba(152, 195, 121, 0.2), var(--surface-2));
       box-shadow: 0 0 0 2px rgba(152, 195, 121, 0.2);
     }
 
-
-    .range-option-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      background: linear-gradient(135deg, rgba(120, 200, 255, 0.15), rgba(120, 200, 255, 0.05));
-      border-bottom: 1px solid rgba(120, 200, 255, 0.3);
-      transition: background 0.3s ease;
+    .range-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
 
-    .range-option.active .range-option-header {
-      background: linear-gradient(135deg, rgba(152, 195, 121, 0.25), rgba(152, 195, 121, 0.1));
-      border-bottom-color: rgba(152, 195, 121, 0.4);
-    }
-
-    .range-option-number {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 22px;
-      height: 22px;
-      background: var(--accent-2);
-      color: #000;
-      border-radius: 50%;
-      font-size: 11px;
-      font-weight: 700;
-      flex-shrink: 0;
-    }
-
-    .range-option-title {
-      font-size: 11px;
-      font-weight: 700;
+    .range-btn i:first-child {
+      font-size: 14px;
       color: var(--accent-2);
     }
 
-    .range-option-content {
-      padding: 10px;
+    .range-btn.active i:first-child {
+      color: var(--accent-3);
+    }
+
+    /* Named Range Dropdown */
+    .range-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin-top: 4px;
+      background: var(--surface-1);
+      border: 2px solid var(--accent-2);
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      overflow: hidden;
+      max-height: 200px;
       display: flex;
-      align-items: center;
-      justify-content: center;
+      flex-direction: column;
+    }
+
+    .range-dropdown select {
       flex: 1;
+      overflow-y: auto;
+    }
+
+    .range-dropdown select::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .range-dropdown select::-webkit-scrollbar-track {
+      background: var(--surface-0);
+    }
+
+    .range-dropdown select::-webkit-scrollbar-thumb {
+      background: var(--accent-2);
+      border-radius: 4px;
     }
 
     .bucket-count {
@@ -1467,28 +1482,23 @@
       }
     }
 
-    /* Make range options stack on very narrow screens */
+    /* Responsive range buttons */
     @media (max-width: 500px) {
-      .range-options-container {
-        flex-direction: column !important;
-        gap: 6px !important;
+      .range-btn {
+        font-size: 11px;
+        padding: 8px 10px;
+        min-height: 40px;
       }
       
-      .range-option {
-        min-width: 100% !important;
-        width: 100%;
+      .range-btn span {
+        display: none; /* Hide text on very narrow screens, keep icons only */
       }
     }
 
-    /* Ensure options are visible at medium widths */
     @media (min-width: 501px) and (max-width: 700px) {
-      .range-option {
-        min-width: 95px;
-        flex: 1 1 30%;
-      }
-      
-      .range-option-title {
-        font-size: 10px;
+      .range-btn {
+        font-size: 11px;
+        padding: 9px 10px;
       }
     }
 
@@ -1594,47 +1604,37 @@
             <i class="fa-solid fa-database"></i> Pick Data Range
           </div>
           
-          <!-- 3 Options in One Row -->
-          <div class="range-options-container" style="display: flex; gap: 8px; margin-bottom: 12px;">
+          <!-- 3 Buttons in One Row -->
+          <div style="display: flex; gap: 8px; margin-bottom: 12px; position: relative;">
             
-            <!-- Option 1: Named Ranges -->
-            <div id="rangeOption1" class="range-option">
-              <div class="range-option-header">
-                <span class="range-option-number">1</span>
-                <span class="range-option-title">Named Range</span>
-              </div>
-              <div class="range-option-content">
-                <select id="rangeSelector" onchange="loadFromNamedRange()" style="width: 100%; font-size: 11px; color: var(--text-secondary);">
-                  <option value="" style="color: var(--text-muted);">-- Select --</option>
+            <!-- Button 1: Named Range (with dropdown) -->
+            <div style="flex: 1; position: relative;">
+              <button id="namedRangeBtn" class="range-btn" onclick="toggleNamedRangeDropdown()">
+                <i class="fa-solid fa-bookmark"></i>
+                <span>Named Range</span>
+                <i class="fa-solid fa-chevron-down" style="margin-left: auto; font-size: 10px;"></i>
+              </button>
+              <div id="namedRangeDropdown" class="range-dropdown" style="display: none;">
+                <div style="padding: 8px; font-size: 11px; color: var(--text-muted); border-bottom: 1px solid var(--border);">
+                  Select a named range:
+                </div>
+                <select id="rangeSelector" onchange="loadFromNamedRange()" size="5" style="width: 100%; border: none; background: var(--surface-1); color: var(--text-primary); padding: 4px; font-size: 11px; outline: none;">
+                  <option value="" style="color: var(--text-muted);">-- No selection --</option>
                 </select>
               </div>
             </div>
             
-            <!-- Option 2: Auto-detect -->
-            <div id="rangeOption2" class="range-option">
-              <div class="range-option-header">
-                <span class="range-option-number">2</span>
-                <span class="range-option-title">Auto-detect</span>
-              </div>
-              <div class="range-option-content">
-                <button class="btn alt" onclick="autoDetectRange()" style="width: 100%; padding: 8px; font-size: 11px;">
-                  <i class="fa-solid fa-magic"></i> Used Range
-                </button>
-              </div>
-            </div>
+            <!-- Button 2: Auto-detect -->
+            <button id="autoDetectBtn" class="range-btn" onclick="autoDetectRange()" style="flex: 1;">
+              <i class="fa-solid fa-magic"></i>
+              <span>Used Range</span>
+            </button>
             
-            <!-- Option 3: Selected Range -->
-            <div id="rangeOption3" class="range-option">
-              <div class="range-option-header">
-                <span class="range-option-number">3</span>
-                <span class="range-option-title">Selected Range</span>
-              </div>
-              <div class="range-option-content">
-                <button id="btnUseSelection" class="btn" onclick="useSelection()" style="width: 100%; padding: 8px; font-size: 11px; background: linear-gradient(135deg, var(--accent-2), #4CAF50);" disabled>
-                  Select
-                </button>
-              </div>
-            </div>
+            <!-- Button 3: Selected Range -->
+            <button id="useSelectionBtn" class="range-btn" onclick="useSelection()" style="flex: 1;" disabled>
+              <i class="fa-solid fa-check"></i>
+              <span>Use Selection</span>
+            </button>
             
           </div>
           
@@ -2030,18 +2030,51 @@
     // ============================================================================
     // RANGE OPTION SELECTION (MUTUALLY EXCLUSIVE)
     // ============================================================================
-    function setActiveRangeOption(optionNumber) {
-      // Remove active class from all options
-      document.querySelectorAll('.range-option').forEach(opt => opt.classList.remove('active'));
+    // Toggle named range dropdown
+    function toggleNamedRangeDropdown() {
+      const dropdown = document.getElementById('namedRangeDropdown');
+      const button = document.getElementById('namedRangeBtn');
       
-      // Add active class to selected option
-      const selectedOption = document.getElementById(`rangeOption${optionNumber}`);
-      if (selectedOption) {
-        selectedOption.classList.add('active');
+      if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+        dropdown.style.display = 'flex';
+        button.classList.add('active');
+      } else {
+        dropdown.style.display = 'none';
+        button.classList.remove('active');
+      }
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+      const dropdown = document.getElementById('namedRangeDropdown');
+      const button = document.getElementById('namedRangeBtn');
+      
+      if (dropdown && button && dropdown.style.display === 'flex') {
+        if (!button.contains(event.target) && !dropdown.contains(event.target)) {
+          dropdown.style.display = 'none';
+          button.classList.remove('active');
+        }
+      }
+    });
+
+    function setActiveRangeOption(optionNumber) {
+      // Remove active class from all buttons
+      document.querySelectorAll('.range-btn').forEach(btn => btn.classList.remove('active'));
+      
+      // Add active class to selected button
+      const buttonIds = ['namedRangeBtn', 'autoDetectBtn', 'useSelectionBtn'];
+      const selectedButton = document.getElementById(buttonIds[optionNumber - 1]);
+      if (selectedButton) {
+        selectedButton.classList.add('active');
       }
       
-      // Reset named range selector if switching to option 2 or 3
+      // Close named range dropdown if switching to option 2 or 3
       if (optionNumber !== 1) {
+        const dropdown = document.getElementById('namedRangeDropdown');
+        if (dropdown) {
+          dropdown.style.display = 'none';
+        }
+        
         const rangeSelector = document.getElementById('rangeSelector');
         if (rangeSelector) {
           rangeSelector.value = '';
@@ -2062,6 +2095,12 @@
       
       selector.style.color = 'var(--text-primary)';
       setActiveRangeOption(1); // Mark option 1 as active
+      
+      // Close dropdown after selection
+      const dropdown = document.getElementById('namedRangeDropdown');
+      if (dropdown) {
+        dropdown.style.display = 'none';
+      }
       
       Excel.run(async (context) => {
         const namedRange = context.workbook.names.getItem(rangeName);
@@ -2090,13 +2129,13 @@
           range.load(['address', 'rowCount', 'columnCount']);
           await context.sync();
           
-          const btnUseSelection = document.getElementById('btnUseSelection');
+          const btnUseSelection = document.getElementById('useSelectionBtn');
           if (range.rowCount > 1 && range.columnCount > 0) {
             btnUseSelection.disabled = false;
-            btnUseSelection.textContent = `✓ Use ${range.address}`;
+            btnUseSelection.innerHTML = `<i class="fa-solid fa-check"></i><span>Use Selection</span>`;
           } else {
             btnUseSelection.disabled = true;
-            btnUseSelection.innerHTML = '<i class="fa-solid fa-check"></i> Use Selection';
+            btnUseSelection.innerHTML = '<i class="fa-solid fa-check"></i><span>Use Selection</span>';
           }
         }).catch(() => {
           // Silently fail if Excel is not ready
