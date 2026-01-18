@@ -1993,6 +1993,7 @@
         tdName.title = 'Click to view statistics';
         tdName.onclick = (e) => {
           e.stopPropagation();
+          console.log('Variable clicked:', variable.name, variable);
           showVariableStats(variable);
         };
         tr.appendChild(tdName);
@@ -2079,8 +2080,14 @@
     // VARIABLE STATS PANEL (CLICK TO SHOW)
     // ============================================================================
     function showVariableStats(variable) {
+      console.log('showVariableStats called for:', variable.name);
       const tooltip = document.getElementById('varStatsTooltip');
       const overlay = document.getElementById('varStatsOverlay');
+      
+      if (!tooltip || !overlay) {
+        console.error('Stats tooltip or overlay not found!');
+        return;
+      }
       
       let html = `
         <div class="tooltip-title">
