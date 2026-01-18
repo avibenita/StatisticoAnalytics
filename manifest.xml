@@ -30,6 +30,7 @@
 
   <DefaultSettings>
     <SourceLocation DefaultValue="https://www.statistico.live/StatisticoAnalytics/regression-unified.html"/>
+    <RequestedWidth>600</RequestedWidth>
   </DefaultSettings>
 
   <Permissions>ReadWriteDocument</Permissions>
@@ -72,6 +73,9 @@
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>ButtonId1</TaskpaneId>
                     <SourceLocation resid="Taskpane.Url"/>
+                    <TaskpaneSize>
+                      <ColumnSpan>2</ColumnSpan>
+                    </TaskpaneSize>
                   </Action>
                 </Control>
               </Group>

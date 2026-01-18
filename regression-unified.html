@@ -37,6 +37,7 @@
       color: var(--text-primary);
       font: 14px/1.45 'Segoe UI', Arial, sans-serif;
       overflow: hidden;
+      min-width: 600px;
     }
 
     /* === TWO-PANEL LAYOUT === */
@@ -1710,6 +1711,16 @@
     Office.onReady((info) => {
       if (info.host === Office.HostType.Excel) {
         console.log('✅ Office.js initialized - Pure JavaScript Unified UI ready');
+        
+        // Request wider task pane (40% of Excel window)
+        try {
+          if (Office.context.ui && Office.context.ui.setTaskPaneWidth) {
+            Office.context.ui.setTaskPaneWidth({ width: '40%' });
+          }
+        } catch (e) {
+          console.log('Note: Task pane width is user-adjustable via drag handle');
+        }
+        
         loadNamedRanges();
         startSelectionMonitor();
       }
