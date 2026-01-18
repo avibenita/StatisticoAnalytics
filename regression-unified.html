@@ -3279,23 +3279,31 @@
     // UI CONTROLS
     // ============================================================================
     function expandTaskPane() {
-      // Show tooltip with instructions
-      showStatus('info', '💡 Tip: Hover over the LEFT edge of this pane, then DRAG right to make it wider!', 'left');
+      console.log('expandTaskPane() called');
+      
+      // Show alert with instructions
+      alert('💡 TIP: To widen this pane:\n\n1. Hover over the LEFT edge of this task pane\n2. Wait for the resize cursor (↔)\n3. DRAG right to make it wider!\n\nExcel will remember your preferred width.');
       
       // Add visual border hint on left edge
       const container = document.querySelector('.main-container');
       if (container) {
-        container.style.borderLeft = '3px solid var(--accent-3)';
+        container.style.borderLeft = '4px solid var(--accent-3)';
         container.style.transition = 'border-left 0.5s ease';
         setTimeout(() => {
           container.style.borderLeft = 'none';
-        }, 3000);
+        }, 5000);
       }
     }
     
     function clearAll() {
-      if (!confirm('Clear all data and assignments?')) return;
+      console.log('clearAll() called');
       
+      if (!confirm('Clear all data and assignments?')) {
+        console.log('User cancelled clear');
+        return;
+      }
+      
+      console.log('Clearing all data...');
       STATE.variables = [];
       STATE.assignments = { y: null, xn: [], xc: [] };
       STATE.currentRange = null;
@@ -3309,7 +3317,9 @@
       
       updateBucketDisplay();
       updateVariablesAssignmentInfo();
-      showStatus('info', 'All data cleared', 'left');
+      
+      console.log('All data cleared successfully');
+      alert('✓ All data cleared!');
     }
 
     // Dropdown toggle
