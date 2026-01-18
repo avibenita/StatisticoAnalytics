@@ -3428,6 +3428,15 @@
                 console.log('🚪 Closing dialog from parent...');
                 window.regressionDialog.close();
                 window.regressionDialog = null;
+              } else if (arg.message === 'openDescriptive') {
+                console.log('📊 Opening Descriptive Statistics dialog...');
+                // Close current regression results dialog
+                if (window.regressionDialog) {
+                  window.regressionDialog.close();
+                  window.regressionDialog = null;
+                }
+                // Open descriptive stats dialog
+                openDescriptiveStatsDialog();
               }
             });
             
@@ -3441,6 +3450,55 @@
             });
             
             showStatus('success', '✅ Results window opened!', 'left');
+          }
+        }
+      );
+    }
+
+    function openDescriptiveStatsDialog() {
+      // Get the dialog URL for descriptive stats
+      const dialogUrl = location.origin + location.pathname.replace(/[^/]*$/, '') + '0Descriptive_Stats.html';
+      
+      console.log('📊 Opening Descriptive Statistics popup...');
+      console.log('📍 Dialog URL:', dialogUrl);
+      
+      // Check if Office.context.ui is available
+      if (!Office.context.ui) {
+        console.error('❌ Office.context.ui is not available!');
+        showStatus('error', '❌ Dialog API not available', 'left');
+        return;
+      }
+      
+      Office.context.ui.displayDialogAsync(
+        dialogUrl,
+        { height: 90, width: 95, displayInIframe: false },
+        function(result) {
+          if (result.status === Office.AsyncResultStatus.Failed) {
+            console.error('❌ Failed to open descriptive stats dialog');
+            console.error('❌ Error:', result.error.message);
+            showStatus('error', '❌ Could not open Descriptive Statistics: ' + result.error.message, 'left');
+          } else {
+            console.log('✅ Descriptive Stats dialog opened successfully!');
+            window.descriptiveDialog = result.value;
+            
+            // Listen for close message
+            window.descriptiveDialog.addEventHandler(Office.EventType.DialogMessageReceived, function(arg) {
+              if (arg.message === 'close') {
+                console.log('🚪 Closing descriptive dialog...');
+                window.descriptiveDialog.close();
+                window.descriptiveDialog = null;
+              }
+            });
+            
+            // Handle dialog being closed by user
+            window.descriptiveDialog.addEventHandler(Office.EventType.DialogEventReceived, function(arg) {
+              if (arg.error === 12006) {
+                console.log('🚪 Descriptive dialog closed by user');
+                window.descriptiveDialog = null;
+              }
+            });
+            
+            showStatus('success', '✅ Descriptive Statistics opened!', 'left');
           }
         }
       );

@@ -405,7 +405,7 @@
               <span class="nav-icon"><i class="fa-solid fa-crystal-ball"></i></span>Predictions
             </a>
             <div class="dropdown-separator"></div>
-            <a onclick="showView('descriptive')" id="nav-descriptive">
+            <a onclick="openDescriptiveStats()" id="nav-descriptive">
               <span class="nav-icon"><i class="fa-solid fa-table"></i></span>Descriptive Statistics
             </a>
             <a onclick="showView('correlation')" id="nav-correlation">
@@ -466,6 +466,18 @@
         console.error('Error closing dialog:', err);
         // Fallback: try window.close
         window.close();
+      }
+    }
+    
+    function openDescriptiveStats() {
+      console.log('📊 Opening Descriptive Statistics...');
+      try {
+        // Send message to parent to open descriptive stats dialog
+        if (Office.context.ui) {
+          Office.context.ui.messageParent('openDescriptive');
+        }
+      } catch (err) {
+        console.error('Error opening descriptive stats:', err);
       }
     }
     
