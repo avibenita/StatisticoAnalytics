@@ -870,6 +870,15 @@
       visibility: visible;
     }
 
+    /* Confirmation modal - higher z-index than warning modal */
+    #confirmOverlay {
+      z-index: 2000;
+    }
+
+    #confirmModal {
+      z-index: 2001;
+    }
+
     /* Warning Modal for Xc with many categories */
     .warning-modal {
       position: fixed;
@@ -1852,6 +1861,26 @@
   <!-- Warning Modal for Xc with many categories -->
   <div id="warningOverlay" class="warning-modal-overlay"></div>
   <div id="warningModal" class="warning-modal"></div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmOverlay" class="warning-modal-overlay" onclick="cancelAction()"></div>
+  <div id="confirmModal" class="warning-modal" style="min-width: 320px; max-width: 420px;">
+    <div class="warning-header" style="background: linear-gradient(135deg, rgba(255, 100, 100, 0.15), rgba(255, 100, 100, 0.05));">
+      <span class="warning-icon">⚠️</span>
+      <span id="confirmTitle">Confirm Action</span>
+    </div>
+    <div class="warning-content" style="padding: 20px;">
+      <p id="confirmMessage" style="margin: 0; line-height: 1.6; color: var(--text-primary);"></p>
+    </div>
+    <div class="warning-actions">
+      <button class="warning-btn cancel" onclick="cancelAction()">
+        <i class="fa-solid fa-times"></i> Cancel
+      </button>
+      <button class="warning-btn confirm" onclick="confirmAction()" style="background: linear-gradient(135deg, #ff6464, #ff4444);">
+        <i class="fa-solid fa-check"></i> Confirm
+      </button>
+    </div>
+  </div>
 
   <!-- Variables Assignment Modal -->
   <div id="varsAssignOverlay" class="vars-assign-overlay" onclick="closeVariablesAssignment()"></div>
@@ -3281,8 +3310,8 @@
     function expandTaskPane() {
       console.log('expandTaskPane() called');
       
-      // Show alert with instructions
-      alert('💡 TIP: To widen this pane:\n\n1. Hover over the LEFT edge of this task pane\n2. Wait for the resize cursor (↔)\n3. DRAG right to make it wider!\n\nExcel will remember your preferred width.');
+      // Show instructions using the now-working showStatus
+      showStatus('info', '💡 <strong>Widen Pane:</strong> Hover over the <strong>LEFT edge</strong> of this pane, then <strong>DRAG right</strong>. Excel remembers your width!', 'left');
       
       // Add visual border hint on left edge
       const container = document.querySelector('.main-container');
@@ -3298,28 +3327,85 @@
     function clearAll() {
       console.log('clearAll() called');
       
-      if (!confirm('Clear all data and assignments?')) {
-        console.log('User cancelled clear');
+      // Show confirmation modal
+      showConfirmDialog(
+        'Clear All Data?',
+        'This will remove all loaded variables, assignments, and selections. This action cannot be undone.',
+        function() {
+          // User confirmed
+          console.log('Clearing all data...');
+          STATE.variables = [];
+          STATE.assignments = { y: null, xn: [], xc: [] };
+          STATE.currentRange = null;
+          STATE.rawData = {};
+          STATE.selectedCategories = {};
+          
+          document.getElementById('variablesBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-muted);">No data loaded. Select a range above.</td></tr>';
+          document.getElementById('rangeDisplay').style.display = 'none';
+          document.getElementById('rangeSelector').value = '';
+          document.getElementById('maxCases').textContent = '--';
+          
+          updateBucketDisplay();
+          updateVariablesAssignmentInfo();
+          
+          console.log('All data cleared successfully');
+          showStatus('success', '✓ All data cleared!', 'left');
+        },
+        function() {
+          // User cancelled
+          console.log('User cancelled clear');
+          showStatus('info', 'Clear cancelled', 'left');
+        }
+      );
+    }
+    
+    // Generic confirmation dialog
+    function showConfirmDialog(title, message, onConfirm, onCancel) {
+      const modal = document.getElementById('confirmModal');
+      const overlay = document.getElementById('confirmOverlay');
+      
+      if (!modal || !overlay) {
+        console.error('Confirm modal not found');
         return;
       }
       
-      console.log('Clearing all data...');
-      STATE.variables = [];
-      STATE.assignments = { y: null, xn: [], xc: [] };
-      STATE.currentRange = null;
-      STATE.rawData = {};
-      STATE.selectedCategories = {};
+      document.getElementById('confirmTitle').textContent = title;
+      document.getElementById('confirmMessage').textContent = message;
       
-      document.getElementById('variablesBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-muted);">No data loaded. Select a range above.</td></tr>';
-      document.getElementById('rangeDisplay').style.display = 'none';
-      document.getElementById('rangeSelector').value = '';
-      document.getElementById('maxCases').textContent = '--';
+      // Store callbacks
+      window._confirmCallback = onConfirm;
+      window._cancelCallback = onCancel;
       
-      updateBucketDisplay();
-      updateVariablesAssignmentInfo();
+      modal.classList.add('show');
+      overlay.classList.add('show');
+    }
+    
+    function confirmAction() {
+      const modal = document.getElementById('confirmModal');
+      const overlay = document.getElementById('confirmOverlay');
       
-      console.log('All data cleared successfully');
-      alert('✓ All data cleared!');
+      modal.classList.remove('show');
+      overlay.classList.remove('show');
+      
+      if (window._confirmCallback) {
+        window._confirmCallback();
+        window._confirmCallback = null;
+        window._cancelCallback = null;
+      }
+    }
+    
+    function cancelAction() {
+      const modal = document.getElementById('confirmModal');
+      const overlay = document.getElementById('confirmOverlay');
+      
+      modal.classList.remove('show');
+      overlay.classList.remove('show');
+      
+      if (window._cancelCallback) {
+        window._cancelCallback();
+        window._confirmCallback = null;
+        window._cancelCallback = null;
+      }
     }
 
     // Dropdown toggle
@@ -3384,8 +3470,8 @@
       status.style.display = 'block';
       console.log('Status displayed:', status.className, status.style.display);
       
-      // Auto-hide after delay (longer for errors/warnings so user can read)
-      const hideDelay = (type === 'error' || type === 'warning') ? 8000 : 5000;
+      // Auto-hide after delay (longer for errors/warnings/info so user can read)
+      const hideDelay = (type === 'error' || type === 'warning' || type === 'info') ? 10000 : 5000;
       setTimeout(() => {
         status.style.display = 'none';
       }, hideDelay);
