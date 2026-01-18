@@ -825,6 +825,42 @@
       visibility: visible;
     }
 
+    .vars-assign-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .vars-assign-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .warning-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1499;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .warning-modal-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
     /* Warning Modal for Xc with many categories */
     .warning-modal {
       position: fixed;
@@ -840,7 +876,7 @@
       max-height: 85vh;
       display: flex;
       flex-direction: column;
-      z-index: 2001;
+      z-index: 1500;
       opacity: 0;
       visibility: hidden;
       transition: all 0.3s ease;
@@ -1105,7 +1141,7 @@
       max-height: 85vh;
       display: flex;
       flex-direction: column;
-      z-index: 2001;
+      z-index: 1000;
       opacity: 0;
       visibility: hidden;
       transition: all 0.3s ease;
@@ -1632,11 +1668,11 @@
   <div id="varStatsTooltip" class="var-stats-tooltip"></div>
 
   <!-- Warning Modal for Xc with many categories -->
-  <div id="warningOverlay" class="var-stats-overlay"></div>
+  <div id="warningOverlay" class="warning-modal-overlay"></div>
   <div id="warningModal" class="warning-modal"></div>
 
   <!-- Variables Assignment Modal -->
-  <div id="varsAssignOverlay" class="var-stats-overlay" onclick="closeVariablesAssignment()"></div>
+  <div id="varsAssignOverlay" class="vars-assign-overlay" onclick="closeVariablesAssignment()"></div>
   <div id="varsAssignModal" class="vars-assign-modal">
     <div class="vars-modal-header">
       <div>
