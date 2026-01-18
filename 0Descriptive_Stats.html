@@ -6,13 +6,15 @@
   <title>Descriptive Statistics</title>
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+  <link href="css/dialog-shared.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/10.3.3/highcharts.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/10.3.3/highcharts-more.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/10.3.3/modules/solid-gauge.js"></script>
   <style>
+    /* Descriptive Stats Specific Styles */
     :root {
-      --panel-bg: #484b57;
+      --panel-bg: #1a1f2e;
       --panel-radius: 10px;
       --panel-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
       --header-bg: #333;
@@ -27,17 +29,6 @@
       --chart-bg: #3a3f4b;
       --pass-color: #2ecc71;
       --fail-color: #e74c3c;
-    }
-
-    body {
-      background-color: #282c39;
-      font-family: Arial, sans-serif;
-      font-size: 13px;
-      margin: 0;
-      padding: 0px;
-      color: var(--text-color);
-      overflow-x: hidden;
-      height: 100vh;
     }
 
     .container {
@@ -674,26 +665,51 @@
 </head>
 
 <body>
-  <!-- Header with Dropdown -->
-  <dropdown-menu></dropdown-menu>
+  <!-- Fancy Header with Dropdown -->
+  <div class="dialog-container">
+    <div class="dialog-header">
+      <h1>
+        <i class="fa-solid fa-chart-bar"></i>
+        Descriptive Statistics
+      </h1>
+      <div class="dialog-header-controls">
+        <div class="decimal-control" style="display: flex; align-items: center; gap: 8px; margin-right: 12px;">
+          <label for="decimal-places" style="color: var(--text-secondary); font-size: 13px;">Decimals:</label>
+          <input type="range" id="decimal-places" min="0" max="4" value="2" style="width: 80px;">
+          <span id="decimal-value" style="color: var(--accent-2); font-weight: 600; font-size: 14px; min-width: 12px;">2</span>
+        </div>
+        
+        <div class="dropdown-container" id="navDropdown">
+          <button class="dropdown-btn" onclick="toggleDropdown()">
+            <i class="fa-solid fa-bars"></i>
+            Analysis Menu
+            <span class="dropdown-arrow">▼</span>
+          </button>
+          <div class="dropdown-content" id="dropdownContent">
+            <a onclick="switchToRegression()" id="nav-regression">
+              <span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span>Regression Results
+            </a>
+            <a onclick="showView('descriptive')" class="selected" id="nav-descriptive">
+              <span class="nav-icon"><i class="fa-solid fa-chart-bar"></i></span>Descriptive Statistics
+            </a>
+            <div class="dropdown-separator"></div>
+            <a onclick="showView('correlation')" id="nav-correlation">
+              <span class="nav-icon"><i class="fa-solid fa-project-diagram"></i></span>Correlation Analysis
+            </a>
+          </div>
+        </div>
+        
+        <button class="close-btn" onclick="closeDialog()">
+          <i class="fa-solid fa-times"></i>
+          Close
+        </button>
+      </div>
+    </div>
 
-  <div class="container">
     <!-- Main stats table -->
     <div class="panel">
-      <div class="panel-header">
-        <div style="display: flex; align-items: center; gap: 15px;">
-          <span>Descriptive Statistics</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 15px;">
-          <div class="decimal-control">
-            <label for="decimal-places">Decimals:</label>
-            <input type="range" id="decimal-places" min="0" max="4" value="2" style="width: 80px;">
-            <span id="decimal-value">2</span>
-          </div>
-          <button onclick="closeDialog()" style="background: transparent; border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: all 0.2s;">
-            <i class="fa-solid fa-times"></i> Close
-          </button>
-        </div>
+      <div class="panel-header" style="background-color: var(--header-bg); padding: 12px; border-top-left-radius: var(--panel-radius); border-top-right-radius: var(--panel-radius); font-weight: 600; font-size: 16px; color: var(--accent-1);">
+        <span>Summary Statistics</span>
       </div>
       <div class="panel-body">
         <div style="overflow-x: auto;">
@@ -928,7 +944,8 @@
         </div>
       </div>
     </div>
-  </div>
+  
+  </div> <!-- End dialog-container -->
 
   <div id="tooltip" class="tooltip" style="opacity: 0;"></div>
 
@@ -955,6 +972,50 @@
         console.error('Error closing dialog:', err);
         window.close(); // Fallback
       }
+    }
+    
+    // Toggle dropdown menu
+    function toggleDropdown() {
+      const dropdown = document.getElementById('navDropdown');
+      dropdown.classList.toggle('open');
+      console.log('📋 Dropdown toggled');
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+      const dropdown = document.getElementById('navDropdown');
+      if (dropdown && !dropdown.contains(event.target)) {
+        dropdown.classList.remove('open');
+      }
+    });
+    
+    // Switch back to regression results
+    function switchToRegression() {
+      console.log('🔄 Switching back to Regression Results...');
+      // Close this dialog and message parent to reopen regression
+      try {
+        if (Office.context.ui) {
+          Office.context.ui.messageParent('openRegression');
+        }
+      } catch (err) {
+        console.error('Error switching to regression:', err);
+      }
+    }
+    
+    // Show different views (placeholder for future features)
+    function showView(viewName) {
+      console.log('📊 View selected:', viewName);
+      // For now, just close dropdown
+      document.getElementById('navDropdown').classList.remove('open');
+      
+      // Could implement different views here in the future
+      if (viewName === 'descriptive') {
+        // Already on descriptive stats
+        return;
+      }
+      
+      // Placeholder for future features
+      alert(`${viewName.charAt(0).toUpperCase() + viewName.slice(1)} feature coming soon!`);
     }
     
     // Global variables
@@ -1684,8 +1745,8 @@
     // Application will be initialized via Office.initialize
   </script>
 
-  <script>
-    class DropdownMenu extends HTMLElement {
+</body>
+</html>
       constructor() {
         super();
         const shadow = this.attachShadow({ mode: "open" });
