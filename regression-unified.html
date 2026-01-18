@@ -3420,6 +3420,26 @@
           } else {
             console.log('✅ Results dialog opened successfully!');
             window.regressionDialog = result.value;
+            
+            // Listen for messages from the dialog (e.g., close request)
+            window.regressionDialog.addEventHandler(Office.EventType.DialogMessageReceived, function(arg) {
+              console.log('📨 Message from dialog:', arg.message);
+              if (arg.message === 'close') {
+                console.log('🚪 Closing dialog from parent...');
+                window.regressionDialog.close();
+                window.regressionDialog = null;
+              }
+            });
+            
+            // Handle dialog being closed by user (X button)
+            window.regressionDialog.addEventHandler(Office.EventType.DialogEventReceived, function(arg) {
+              console.log('📨 Dialog event:', arg);
+              if (arg.error === 12006) { // Dialog closed by user
+                console.log('🚪 Dialog closed by user');
+                window.regressionDialog = null;
+              }
+            });
+            
             showStatus('success', '✅ Results window opened!', 'left');
           }
         }
