@@ -3462,12 +3462,12 @@
     }
 
     function openDescriptiveStatsDialog() {
-      // Get only variables assigned to the model
+      // Get only variables assigned to the model (y is string, xn/xc are arrays)
       const assignedVarNames = [
-        ...STATE.assignments.Y,
-        ...STATE.assignments.Xn,
-        ...STATE.assignments.Xc
-      ];
+        STATE.assignments.y,
+        ...STATE.assignments.xn,
+        ...STATE.assignments.xc
+      ].filter(name => name !== null && name !== undefined);
       
       const assignedVariables = STATE.variables.filter(v => assignedVarNames.includes(v.name));
       
