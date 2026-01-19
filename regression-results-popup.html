@@ -659,19 +659,35 @@
     }
 
     function displayDescriptiveView(data) {
-      // Load the full Descriptive Statistics page in an iframe
-      const descriptiveUrl = location.origin + location.pathname.replace(/[^/]*$/, '') + '0Descriptive_Stats.html';
+      // Load data from localStorage
+      const storedData = localStorage.getItem('descriptiveStatsData');
       
-      document.getElementById('resultsContent').innerHTML = `
-        <style>
-          /* Hide the dialog header inside the iframe to avoid duplication */
-          iframe#descriptiveFrame {
-            width: 100%;
-            height: 100%;
-            border: none;
-            display: block;
-          }
-        </style>
+      if (!storedData) {
+        document.getElementById('resultsContent').innerHTML = `
+          <div class="loading">
+            <i class="fa-solid fa-chart-bar" style="font-size: 40px; color: var(--accent-2); margin-bottom: 16px;"></i>
+            <h3 style="color: var(--accent-1);">Descriptive Statistics</h3>
+            <p style="color: var(--text-secondary); max-width: 600px; margin: 16px auto;">
+              No data available. Please run a regression first.
+            </p>
+            <div style="margin-top: 24px;">
+              <button onclick="showView('regression')" class="close-btn">
+                <i class="fa-solid fa-arrow-left"></i> Back to Results
+              </button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+      
+      const statsData = JSON.parse(storedData);
+      const variables = statsData.variables || [];
+      
+      console.log('📊 Loading descriptive stats for', variables.length, 'variables');
+      console.log('Variables data:', variables);
+      
+      // Build HTML
+      let html = `
         <div style="padding: 20px;">
           <div style="margin-bottom: 16px;">
             <button onclick="showView('regression')" class="close-btn">
@@ -679,37 +695,140 @@
             </button>
           </div>
           
-          <div style="position: relative; width: 100%; height: calc(100vh - 220px); min-height: 600px; background: var(--surface-1); border-radius: 8px; overflow: hidden; border: 1px solid var(--border);">
-            <iframe 
-              id="descriptiveFrame"
-              src="${descriptiveUrl}" 
-              style="width: 100%; height: 100%; border: none; display: block;"
-              title="Descriptive Statistics"
-              onload="hideIframeHeader()">
-            </iframe>
+          <div class="stat-panel" style="margin-bottom: 20px;">
+            <div class="stat-panel-heading">
+              <i class="fa-solid fa-chart-bar"></i> Summary Statistics for Model Variables
+            </div>
+            <div class="stat-panel-body">
+              <div style="overflow-x: auto;">
+                <table class="regression-table">
+                  <thead>
+                    <tr>
+                      <th>Variable</th>
+                      <th>N</th>
+                      <th>Mean</th>
+                      <th>Std Dev</th>
+                      <th>Min</th>
+                      <th>Median</th>
+                      <th>Max</th>
+                    </tr>
+                  </thead>
+                  <tbody>`;
+      
+      variables.forEach(v => {
+        const s = v.stats || {};
+        html += `
+                    <tr style="cursor: pointer;" onclick="showHistogram('${v.name}')">
+                      <td style="font-weight: 600; color: var(--accent-1);">${v.name}</td>
+                      <td>${v.n || v.nNum || 0}</td>
+                      <td>${s.mean ? s.mean.toFixed(2) : 'N/A'}</td>
+                      <td>${s.sd ? s.sd.toFixed(2) : 'N/A'}</td>
+                      <td>${s.min ? s.min.toFixed(2) : 'N/A'}</td>
+                      <td>${s.median ? s.median.toFixed(2) : 'N/A'}</td>
+                      <td>${s.max ? s.max.toFixed(2) : 'N/A'}</td>
+                    </tr>`;
+      });
+      
+      html += `
+                  </tbody>
+                </table>
+              </div>
+              <p style="color: var(--text-muted); font-size: 12px; margin-top: 12px;">
+                <i class="fa-solid fa-info-circle"></i> Click on a variable row to view its histogram
+              </p>
+            </div>
+          </div>
+          
+          <!-- Histogram area (initially hidden) -->
+          <div id="histogramArea" style="display: none;">
+            <div class="stat-panel">
+              <div class="stat-panel-heading">
+                <span id="histogramTitle">Histogram</span>
+              </div>
+              <div class="stat-panel-body">
+                <div id="histogramChart" style="width: 100%; height: 400px;"></div>
+                <button onclick="hideHistogram()" style="margin-top: 16px;" class="close-btn">
+                  <i class="fa-solid fa-eye-slash"></i> Hide Histogram
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       `;
+      
+      document.getElementById('resultsContent').innerHTML = html;
+      
+      // Store variables data for histogram function
+      window.descriptiveVariables = variables;
     }
     
-    // Hide the header in the iframe to avoid duplication
-    function hideIframeHeader() {
-      try {
-        const iframe = document.getElementById('descriptiveFrame');
-        if (iframe && iframe.contentDocument) {
-          const iframeHeader = iframe.contentDocument.querySelector('.dialog-header');
-          if (iframeHeader) {
-            iframeHeader.style.display = 'none';
-          }
-          // Also hide the container padding to make it seamless
-          const iframeContainer = iframe.contentDocument.querySelector('.dialog-container');
-          if (iframeContainer) {
-            iframeContainer.style.padding = '0';
-          }
-        }
-      } catch (err) {
-        console.log('Could not access iframe content (cross-origin):', err);
+    function showHistogram(varName) {
+      const variables = window.descriptiveVariables || [];
+      const variable = variables.find(v => v.name === varName);
+      
+      if (!variable || !variable.data) {
+        console.log('No data available for', varName);
+        return;
       }
+      
+      // Filter numeric values
+      const numericData = variable.data.filter(v => v !== null && v !== undefined && v !== '' && !isNaN(Number(v))).map(Number);
+      
+      if (numericData.length === 0) {
+        alert(`No numeric data available for ${varName}`);
+        return;
+      }
+      
+      console.log(`📊 Creating histogram for ${varName} with ${numericData.length} values`);
+      
+      // Show histogram area
+      document.getElementById('histogramArea').style.display = 'block';
+      document.getElementById('histogramTitle').textContent = `Histogram - ${varName}`;
+      
+      // Simple histogram using canvas (since we already have the data)
+      createSimpleHistogram('histogramChart', numericData, varName);
+    }
+    
+    function hideHistogram() {
+      document.getElementById('histogramArea').style.display = 'none';
+    }
+    
+    function createSimpleHistogram(containerId, data, title) {
+      // Calculate histogram bins
+      const min = Math.min(...data);
+      const max = Math.max(...data);
+      const binCount = 20;
+      const binWidth = (max - min) / binCount;
+      
+      const bins = Array(binCount).fill(0);
+      data.forEach(value => {
+        const binIndex = Math.min(Math.floor((value - min) / binWidth), binCount - 1);
+        bins[binIndex]++;
+      });
+      
+      // Create HTML bar chart
+      const maxFreq = Math.max(...bins);
+      let chartHTML = '<div style="display: flex; align-items: flex-end; height: 300px; gap: 2px; padding: 20px; background: var(--surface-2); border-radius: 8px;">';
+      
+      bins.forEach((freq, i) => {
+        const height = (freq / maxFreq) * 250;
+        const binStart = (min + i * binWidth).toFixed(2);
+        const binEnd = (min + (i + 1) * binWidth).toFixed(2);
+        chartHTML += `
+          <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;">
+            <div style="background: linear-gradient(180deg, var(--accent-2), var(--accent-1)); width: 100%; height: ${height}px; border-radius: 3px 3px 0 0; transition: all 0.2s;" title="${binStart} - ${binEnd}: ${freq}"></div>
+          </div>
+        `;
+      });
+      
+      chartHTML += '</div>';
+      chartHTML += `<div style="text-align: center; margin-top: 12px; color: var(--text-secondary);">
+        <strong>Range:</strong> ${min.toFixed(2)} to ${max.toFixed(2)} | 
+        <strong>Mean:</strong> ${(data.reduce((a,b) => a+b, 0) / data.length).toFixed(2)} |
+        <strong>N:</strong> ${data.length}
+      </div>`;
+      
+      document.getElementById(containerId).innerHTML = chartHTML;
     }
   </script>
 </body>
