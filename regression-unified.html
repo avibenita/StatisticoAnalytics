@@ -3389,6 +3389,22 @@
       localStorage.setItem('regressionResults', JSON.stringify(resultsData));
       console.log('💾 Results stored in localStorage');
       
+      // Also store descriptive stats data for the Descriptive Statistics view
+      const assignedVarNames = [
+        STATE.assignments.y,
+        ...STATE.assignments.xn,
+        ...STATE.assignments.xc
+      ].filter(name => name !== null && name !== undefined);
+      
+      const assignedVariables = STATE.variables.filter(v => assignedVarNames.includes(v.name));
+      const descriptiveData = {
+        variables: assignedVariables,
+        assignments: STATE.assignments,
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem('descriptiveStatsData', JSON.stringify(descriptiveData));
+      console.log('💾 Descriptive stats data stored in localStorage');
+      
       // Open popup dialog
       openResultsPopup();
     }

@@ -183,8 +183,8 @@
               <span class="nav-icon"><i class="fa-solid fa-crystal-ball"></i></span>Predictions
             </a>
             <div class="dropdown-separator"></div>
-            <a onclick="openDescriptiveStats()" id="nav-descriptive">
-              <span class="nav-icon"><i class="fa-solid fa-table"></i></span>Descriptive Statistics
+            <a onclick="showView('descriptive')" id="nav-descriptive">
+              <span class="nav-icon"><i class="fa-solid fa-chart-bar"></i></span>Descriptive Statistics
             </a>
             <a onclick="showView('correlation')" id="nav-correlation">
               <span class="nav-icon"><i class="fa-solid fa-diagram-project"></i></span>Correlation Analysis
@@ -247,17 +247,17 @@
       }
     }
     
-    function openDescriptiveStats() {
-      console.log('📊 Opening Descriptive Statistics...');
-      try {
-        // Send message to parent to open descriptive stats dialog
-        if (Office.context.ui) {
-          Office.context.ui.messageParent('openDescriptive');
-        }
-      } catch (err) {
-        console.error('Error opening descriptive stats:', err);
-      }
-    }
+    // DEPRECATED: Descriptive stats now shown as a view within this dialog
+    // function openDescriptiveStats() {
+    //   console.log('📊 Opening Descriptive Statistics...');
+    //   try {
+    //     if (Office.context.ui) {
+    //       Office.context.ui.messageParent('openDescriptive');
+    //     }
+    //   } catch (err) {
+    //     console.error('Error opening descriptive stats:', err);
+    //   }
+    // }
     
     function toggleDropdown() {
       console.log('🔽 toggleDropdown() called');
@@ -311,6 +311,10 @@
         case 'correlation':
           document.getElementById('pageTitle').textContent = 'Correlation Analysis';
           displayCorrelationView(resultsData);
+          break;
+        case 'descriptive':
+          document.getElementById('pageTitle').textContent = 'Descriptive Statistics';
+          displayDescriptiveView(resultsData);
           break;
       }
     }
@@ -652,6 +656,87 @@
           </div>
         </div>
       `;
+    }
+
+    function displayDescriptiveView(data) {
+      // Get descriptive stats data from localStorage
+      const descriptiveData = localStorage.getItem('descriptiveStatsData');
+      
+      if (!descriptiveData) {
+        document.getElementById('resultsContent').innerHTML = `
+          <div class="loading">
+            <i class="fa-solid fa-chart-bar" style="font-size: 40px; color: var(--accent-2); margin-bottom: 16px;"></i>
+            <h3 style="color: var(--accent-1);">Descriptive Statistics</h3>
+            <p style="color: var(--text-secondary); max-width: 600px; margin: 16px auto;">
+              No data available for descriptive statistics.<br>
+              Please run a regression first.
+            </p>
+            <div style="margin-top: 24px;">
+              <button onclick="showView('regression')" class="close-btn">
+                <i class="fa-solid fa-arrow-left"></i> Back to Results
+              </button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+      
+      const stats = JSON.parse(descriptiveData);
+      const variables = stats.variables || [];
+      
+      // Build descriptive statistics table
+      let tableHTML = `
+        <div style="padding: 20px;">
+          <div style="margin-bottom: 24px;">
+            <button onclick="showView('regression')" class="close-btn">
+              <i class="fa-solid fa-arrow-left"></i> Back to Results
+            </button>
+          </div>
+          
+          <div class="stat-panel">
+            <div class="stat-panel-heading">
+              <i class="fa-solid fa-chart-bar"></i> Summary Statistics for Model Variables
+            </div>
+            <div class="stat-panel-body">
+              <div style="overflow-x: auto;">
+                <table class="regression-table">
+                  <thead>
+                    <tr>
+                      <th>Variable</th>
+                      <th>N</th>
+                      <th>Mean</th>
+                      <th>Std Dev</th>
+                      <th>Min</th>
+                      <th>Median</th>
+                      <th>Max</th>
+                    </tr>
+                  </thead>
+                  <tbody>`;
+      
+      variables.forEach(v => {
+        const s = v.stats || {};
+        tableHTML += `
+                    <tr>
+                      <td style="font-weight: 600; color: var(--accent-1);">${v.name}</td>
+                      <td>${v.n || 0}</td>
+                      <td>${(s.mean || 0).toFixed(2)}</td>
+                      <td>${(s.sd || 0).toFixed(2)}</td>
+                      <td>${(s.min || 0).toFixed(2)}</td>
+                      <td>${(s.median || 0).toFixed(2)}</td>
+                      <td>${(s.max || 0).toFixed(2)}</td>
+                    </tr>`;
+      });
+      
+      tableHTML += `
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('resultsContent').innerHTML = tableHTML;
     }
   </script>
 </body>
