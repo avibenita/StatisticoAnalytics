@@ -976,18 +976,16 @@
     
     // Toggle dropdown menu
     function toggleDropdown() {
+      console.log('🔽 toggleDropdown() called');
       const dropdown = document.getElementById('navDropdown');
-      dropdown.classList.toggle('open');
-      console.log('📋 Dropdown toggled');
-    }
-    
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(event) {
-      const dropdown = document.getElementById('navDropdown');
-      if (dropdown && !dropdown.contains(event.target)) {
-        dropdown.classList.remove('open');
+      console.log('Dropdown element:', dropdown);
+      if (dropdown) {
+        dropdown.classList.toggle('open');
+        console.log('Dropdown classes:', dropdown.className);
+      } else {
+        console.error('❌ Dropdown element not found!');
       }
-    });
+    }
     
     // Switch back to regression results
     function switchToRegression() {
@@ -1691,6 +1689,14 @@
         });
       });
       
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function(e) {
+        const dropdown = document.getElementById('navDropdown');
+        if (dropdown && !dropdown.contains(e.target)) {
+          dropdown.classList.remove('open');
+        }
+      });
+      
       // Add event listener for bins slider
       const numBinsSlider = document.getElementById('num-bins');
       const binsValue = document.getElementById('bins-value');
@@ -1743,90 +1749,6 @@
     }
 
     // Application will be initialized via Office.initialize
-  </script>
-
-</body>
-</html>
-      constructor() {
-        super();
-        const shadow = this.attachShadow({ mode: "open" });
-        shadow.innerHTML = `
-          <style>
-            :host { display: block; font-family: Arial; padding-left: 10px; }
-            .header { display: flex; justify-content: space-between; align-items: center; background: #1f1f2f; padding: 20px; }
-            h1 { font-size: 28px; color: rgb(255,192,192); margin: 0; }
-            .dropdown { position: relative; }
-            .dropbtn { background: linear-gradient(to right, rgb(255,192,192), rgb(255,160,160)); color: black; font-weight: bold; border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-            .dropdown-content { margin-top: 5px; position: absolute; top: 100%; left: 10%; transform: translateX(-40%) scaleY(0); background-color: white; color: black; border-radius: 6px; overflow: hidden; box-shadow: 2px 4px 8px rgba(0,0,0,0.4); min-width: 420px; font-size: 14px; column-count: 1; column-gap: 0; opacity: 0; transition: all 0.25s ease-in-out; transform-origin: top; pointer-events: none; z-index: 1000; }
-            .dropdown-content.show { transform: translateX(-40%) scaleY(1); opacity: 1; pointer-events: auto; }
-            .dropdown-content a { padding: 6px 10px; display: flex; align-items: center; text-decoration: none; color: black; transition: background 0.2s ease; }
-            .dropdown-content a:hover { background-color: rgb(255,160,160); color: white; }
-            .dropdown-content a.selected { background-color: rgb(255,160,160); color: white; font-weight: bold; }
-            .dropdown-content a img { width: 20px; height: 20px; object-fit: contain; }
-          </style>
-          <div class="header">
-            <h1 id="title">Correlations</h1>
-            <div class="dropdown">
-              <button class="dropbtn">Select Analysis ▼</button>
-              <div class="dropdown-content">
-                <a href="javascript:void(0)" onclick="sendMessageToVB6('Case00_Pearson', 'Case00_Pearson')">Correlations Table</a> 
-                <a href="javascript:void(0)" onclick="sendMessageToVB6('Case10', 'Case10')">Correlations Map Network</a>   
-                <a href="javascript:void(0)" onclick="sendMessageToVB6('Case20', 'Case20')">Partial Correlations</a>
-                <a href="javascript:void(0)" onclick="sendMessageToVB6('Case30', 'Case30')">Reliabilty Coefficients</a>
-                <a href="javascript:void(0)" onclick="sendMessageToVB6('Case40', 'Case40')">Taylor Diagram</a>
-                <a href="javascript:void(0)">--------------------------------------------------</a>
-                <a href="javascript:void(0)" onclick="sendMessageToVB6('Case60', 'Case60')">Descriptive Statistics</a>
-              </div>
-            </div>
-          </div>
-        `;
-
-        const title = shadow.getElementById("title");
-        const dropdown = shadow.querySelector(".dropdown-content");
-        const btn = shadow.querySelector(".dropbtn");
-
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          dropdown.classList.toggle("show");
-        });
-
-        window.addEventListener("click", () => {
-          dropdown.classList.remove("show");
-        });
-
-        shadow.querySelectorAll("a").forEach(link => {
-          link.addEventListener("click", (e) => {
-            e.preventDefault();
-            const action = link.dataset.action;
-            const label = link.textContent.trim();
-
-            title.textContent = label;
-            dropdown.querySelectorAll("a").forEach(a => a.classList.remove("selected"));
-            link.classList.add("selected");
-            dropdown.classList.remove("show");
-
-            try {
-              if (window.external && window.external.OrdoWebView1_JSMessage) {
-                window.external.OrdoWebView1_JSMessage(action + "|" + label);
-              }
-            } catch (err) {
-              console.warn("VB6 bridge error:", err.message);
-            }
-          });
-        });
-     
-        window.updateHeaderTitle = (newTitle) => {
-          title.textContent = newTitle;
-          dropdown.querySelectorAll("a").forEach(link => {
-            link.classList.remove("selected");
-            if (link.textContent.trim().includes(newTitle.trim())) {
-              link.classList.add("selected");
-            }
-          });
-        };
-      }
-    }
-    customElements.define("dropdown-menu", DropdownMenu);
   </script>
 
 </body>
