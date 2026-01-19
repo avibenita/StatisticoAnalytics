@@ -659,84 +659,26 @@
     }
 
     function displayDescriptiveView(data) {
-      // Get descriptive stats data from localStorage
-      const descriptiveData = localStorage.getItem('descriptiveStatsData');
+      // Load the full Descriptive Statistics page in an iframe
+      const descriptiveUrl = location.origin + location.pathname.replace(/[^/]*$/, '') + '0Descriptive_Stats.html';
       
-      if (!descriptiveData) {
-        document.getElementById('resultsContent').innerHTML = `
-          <div class="loading">
-            <i class="fa-solid fa-chart-bar" style="font-size: 40px; color: var(--accent-2); margin-bottom: 16px;"></i>
-            <h3 style="color: var(--accent-1);">Descriptive Statistics</h3>
-            <p style="color: var(--text-secondary); max-width: 600px; margin: 16px auto;">
-              No data available for descriptive statistics.<br>
-              Please run a regression first.
-            </p>
-            <div style="margin-top: 24px;">
-              <button onclick="showView('regression')" class="close-btn">
-                <i class="fa-solid fa-arrow-left"></i> Back to Results
-              </button>
-            </div>
-          </div>
-        `;
-        return;
-      }
-      
-      const stats = JSON.parse(descriptiveData);
-      const variables = stats.variables || [];
-      
-      // Build descriptive statistics table
-      let tableHTML = `
+      document.getElementById('resultsContent').innerHTML = `
         <div style="padding: 20px;">
-          <div style="margin-bottom: 24px;">
+          <div style="margin-bottom: 16px;">
             <button onclick="showView('regression')" class="close-btn">
               <i class="fa-solid fa-arrow-left"></i> Back to Results
             </button>
           </div>
           
-          <div class="stat-panel">
-            <div class="stat-panel-heading">
-              <i class="fa-solid fa-chart-bar"></i> Summary Statistics for Model Variables
-            </div>
-            <div class="stat-panel-body">
-              <div style="overflow-x: auto;">
-                <table class="regression-table">
-                  <thead>
-                    <tr>
-                      <th>Variable</th>
-                      <th>N</th>
-                      <th>Mean</th>
-                      <th>Std Dev</th>
-                      <th>Min</th>
-                      <th>Median</th>
-                      <th>Max</th>
-                    </tr>
-                  </thead>
-                  <tbody>`;
-      
-      variables.forEach(v => {
-        const s = v.stats || {};
-        tableHTML += `
-                    <tr>
-                      <td style="font-weight: 600; color: var(--accent-1);">${v.name}</td>
-                      <td>${v.n || 0}</td>
-                      <td>${(s.mean || 0).toFixed(2)}</td>
-                      <td>${(s.sd || 0).toFixed(2)}</td>
-                      <td>${(s.min || 0).toFixed(2)}</td>
-                      <td>${(s.median || 0).toFixed(2)}</td>
-                      <td>${(s.max || 0).toFixed(2)}</td>
-                    </tr>`;
-      });
-      
-      tableHTML += `
-                  </tbody>
-                </table>
-              </div>
-            </div>
+          <div style="position: relative; width: 100%; height: calc(100vh - 220px); min-height: 600px; background: var(--surface-1); border-radius: 8px; overflow: hidden; border: 1px solid var(--border);">
+            <iframe 
+              src="${descriptiveUrl}" 
+              style="width: 100%; height: 100%; border: none; display: block;"
+              title="Descriptive Statistics">
+            </iframe>
           </div>
         </div>
       `;
-      
-      document.getElementById('resultsContent').innerHTML = tableHTML;
     }
   </script>
 </body>
