@@ -715,10 +715,10 @@
                   </thead>
                   <tbody>`;
       
-      variables.forEach(v => {
+      variables.forEach((v, index) => {
         const s = v.stats || {};
         html += `
-                    <tr style="cursor: pointer;" onclick="showHistogram('${v.name}')">
+                    <tr style="cursor: pointer; ${index === 0 ? 'background: rgba(255, 165, 120, 0.1);' : ''}" onclick="showHistogram('${v.name}')" id="row-${v.name}">
                       <td style="font-weight: 600; color: var(--accent-1);">${v.name}</td>
                       <td>${v.n || v.nNum || 0}</td>
                       <td>${s.mean ? s.mean.toFixed(2) : 'N/A'}</td>
@@ -739,17 +739,43 @@
             </div>
           </div>
           
-          <!-- Histogram area (initially hidden) -->
-          <div id="histogramArea" style="display: none;">
+          <!-- Histogram area (will show first variable by default) -->
+          <div id="histogramArea" style="display: block;">
             <div class="stat-panel">
               <div class="stat-panel-heading">
                 <span id="histogramTitle">Histogram</span>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                  <label style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 13px;">
+                    <input type="checkbox" id="showNormalCurve" checked onchange="refreshHistogram()" style="cursor: pointer;">
+                    Show Normal Curve
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 13px;">
+                    Bins:
+                    <input type="range" id="numBins" min="5" max="30" value="20" onchange="refreshHistogram()" style="width: 80px; cursor: pointer;">
+                    <span id="binsValue">20</span>
+                  </label>
+                </div>
               </div>
               <div class="stat-panel-body">
-                <div id="histogramChart" style="width: 100%; height: 400px;"></div>
-                <button onclick="hideHistogram()" style="margin-top: 16px;" class="close-btn">
-                  <i class="fa-solid fa-eye-slash"></i> Hide Histogram
-                </button>
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+                  <!-- Histogram Chart -->
+                  <div>
+                    <div id="histogramChart" style="width: 100%; height: 400px;"></div>
+                  </div>
+                  
+                  <!-- Statistics Panel -->
+                  <div>
+                    <h3 style="color: var(--accent-1); margin-top: 0; margin-bottom: 16px; text-align: center;">Summary</h3>
+                    <table style="width: 100%; border-collapse: collapse; background: var(--surface-2); border-radius: 8px; overflow: hidden;">
+                      <tbody id="summaryStatsTable">
+                        <!-- Will be populated by JavaScript -->
+                      </tbody>
+                    </table>
+                    <button onclick="showNormalityTests()" style="margin-top: 16px; width: 100%; padding: 12px; background: linear-gradient(135deg, rgba(255, 165, 120, 0.2), rgba(120, 200, 255, 0.1)); border: 1px solid var(--accent-1); color: var(--accent-1); border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;">
+                      <i class="fa-solid fa-chart-line"></i> Normality Tests
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -760,6 +786,11 @@
       
       // Store variables data for histogram function
       window.descriptiveVariables = variables;
+      
+      // Auto-load first variable's histogram
+      if (variables.length > 0) {
+        setTimeout(() => showHistogram(variables[0].name), 100);
+      }
     }
     
     function showHistogram(varName) {
@@ -775,60 +806,172 @@
       const numericData = variable.data.filter(v => v !== null && v !== undefined && v !== '' && !isNaN(Number(v))).map(Number);
       
       if (numericData.length === 0) {
-        alert(`No numeric data available for ${varName}`);
+        console.log(`⚠️ No numeric data available for ${varName}`);
         return;
       }
       
       console.log(`📊 Creating histogram for ${varName} with ${numericData.length} values`);
       
-      // Show histogram area
-      document.getElementById('histogramArea').style.display = 'block';
+      // Highlight selected row
+      document.querySelectorAll('#resultsContent tbody tr').forEach(row => {
+        row.style.background = '';
+      });
+      const selectedRow = document.getElementById(`row-${varName}`);
+      if (selectedRow) {
+        selectedRow.style.background = 'rgba(255, 165, 120, 0.15)';
+      }
+      
+      // Update title
       document.getElementById('histogramTitle').textContent = `Histogram - ${varName}`;
       
-      // Simple histogram using canvas (since we already have the data)
-      createSimpleHistogram('histogramChart', numericData, varName);
+      // Store current variable for refresh
+      window.currentHistogramVariable = varName;
+      
+      // Calculate additional statistics
+      const stats = calculateExtendedStats(numericData);
+      
+      // Update summary table
+      updateSummaryTable(stats);
+      
+      // Create histogram with normal curve
+      createHistogramWithNormal('histogramChart', numericData, stats, varName);
     }
     
-    function hideHistogram() {
-      document.getElementById('histogramArea').style.display = 'none';
+    function refreshHistogram() {
+      if (window.currentHistogramVariable) {
+        showHistogram(window.currentHistogramVariable);
+      }
     }
     
-    function createSimpleHistogram(containerId, data, title) {
-      // Calculate histogram bins
-      const min = Math.min(...data);
-      const max = Math.max(...data);
-      const binCount = 20;
+    function calculateExtendedStats(data) {
+      const n = data.length;
+      const sorted = data.slice().sort((a, b) => a - b);
+      const sum = data.reduce((a, b) => a + b, 0);
+      const mean = sum / n;
+      
+      // Standard deviation
+      const variance = data.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / n;
+      const sd = Math.sqrt(variance);
+      
+      // Skewness
+      const m3 = data.reduce((acc, val) => acc + Math.pow(val - mean, 3), 0) / n;
+      const skew = m3 / Math.pow(sd, 3);
+      
+      // Kurtosis
+      const m4 = data.reduce((acc, val) => acc + Math.pow(val - mean, 4), 0) / n;
+      const kurt = (m4 / Math.pow(sd, 4)) - 3; // Excess kurtosis
+      
+      // Quartiles
+      const q1Index = Math.floor(n * 0.25);
+      const medianIndex = Math.floor(n * 0.5);
+      const q3Index = Math.floor(n * 0.75);
+      
+      return {
+        n: n,
+        mean: mean,
+        sd: sd,
+        min: sorted[0],
+        q1: sorted[q1Index],
+        median: sorted[medianIndex],
+        q3: sorted[q3Index],
+        max: sorted[n - 1],
+        skew: skew,
+        kurt: kurt
+      };
+    }
+    
+    function updateSummaryTable(stats) {
+      const tableHTML = `
+        <tr><td style="padding: 8px; border-bottom: 1px solid var(--border); color: var(--text-secondary);">N:</td><td style="padding: 8px; border-bottom: 1px solid var(--border); text-align: right; font-weight: 600;">${stats.n}</td></tr>
+        <tr><td style="padding: 8px; border-bottom: 1px solid var(--border); color: var(--text-secondary);">Mean:</td><td style="padding: 8px; border-bottom: 1px solid var(--border); text-align: right; font-weight: 600;">${stats.mean.toFixed(2)}</td></tr>
+        <tr><td style="padding: 8px; border-bottom: 1px solid var(--border); color: var(--text-secondary);">StdDev:</td><td style="padding: 8px; border-bottom: 1px solid var(--border); text-align: right; font-weight: 600;">${stats.sd.toFixed(2)}</td></tr>
+        <tr><td style="padding: 8px; border-bottom: 1px solid var(--border); color: var(--text-secondary);">Min:</td><td style="padding: 8px; border-bottom: 1px solid var(--border); text-align: right; font-weight: 600;">${stats.min.toFixed(2)}</td></tr>
+        <tr><td style="padding: 8px; border-bottom: 1px solid var(--border); color: var(--text-secondary);">Median:</td><td style="padding: 8px; border-bottom: 1px solid var(--border); text-align: right; font-weight: 600;">${stats.median.toFixed(2)}</td></tr>
+        <tr><td style="padding: 8px; border-bottom: 1px solid var(--border); color: var(--text-secondary);">Max:</td><td style="padding: 8px; border-bottom: 1px solid var(--border); text-align: right; font-weight: 600;">${stats.max.toFixed(2)}</td></tr>
+        <tr><td style="padding: 8px; border-bottom: 1px solid var(--border); color: var(--text-secondary);">Skew:</td><td style="padding: 8px; border-bottom: 1px solid var(--border); text-align: right; font-weight: 600;">${stats.skew.toFixed(2)}</td></tr>
+        <tr><td style="padding: 8px; color: var(--text-secondary);">Kurt:</td><td style="padding: 8px; text-align: right; font-weight: 600;">${stats.kurt.toFixed(2)}</td></tr>
+      `;
+      document.getElementById('summaryStatsTable').innerHTML = tableHTML;
+      document.getElementById('binsValue').textContent = document.getElementById('numBins').value;
+    }
+    
+    function showNormalityTests() {
+      alert('Normality Tests feature\n\nThis will show:\n- Shapiro-Wilk Test\n- Anderson-Darling Test\n- Kolmogorov-Smirnov Test\n- Jarque-Bera Test\n\n(Feature coming soon!)');
+    }
+    
+    function createHistogramWithNormal(containerId, data, stats, title) {
+      const binCount = parseInt(document.getElementById('numBins').value) || 20;
+      const showNormal = document.getElementById('showNormalCurve').checked;
+      
+      const min = stats.min;
+      const max = stats.max;
       const binWidth = (max - min) / binCount;
       
+      // Calculate histogram bins
       const bins = Array(binCount).fill(0);
       data.forEach(value => {
         const binIndex = Math.min(Math.floor((value - min) / binWidth), binCount - 1);
         bins[binIndex]++;
       });
       
-      // Create HTML bar chart
-      const maxFreq = Math.max(...bins);
-      let chartHTML = '<div style="display: flex; align-items: flex-end; height: 300px; gap: 2px; padding: 20px; background: var(--surface-2); border-radius: 8px;">';
+      // Calculate normal distribution curve points
+      const normalCurve = [];
+      if (showNormal) {
+        for (let i = 0; i <= binCount; i++) {
+          const x = min + (i / binCount) * (max - min);
+          const z = (x - stats.mean) / stats.sd;
+          const y = (1 / (stats.sd * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * z * z);
+          // Scale to match histogram (density * binWidth * totalCount)
+          normalCurve.push({ x: x, y: y * binWidth * stats.n });
+        }
+      }
       
+      // Create SVG histogram with normal curve
+      const maxFreq = Math.max(...bins, ...normalCurve.map(p => p.y));
+      const width = 100; // percentage
+      const height = 350;
+      const padding = { top: 20, right: 20, bottom: 40, left: 50 };
+      
+      let svg = `<svg width="100%" height="${height}" style="background: var(--surface-2); border-radius: 8px;">`;
+      
+      // Draw bars
       bins.forEach((freq, i) => {
-        const height = (freq / maxFreq) * 250;
-        const binStart = (min + i * binWidth).toFixed(2);
-        const binEnd = (min + (i + 1) * binWidth).toFixed(2);
-        chartHTML += `
-          <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;">
-            <div style="background: linear-gradient(180deg, var(--accent-2), var(--accent-1)); width: 100%; height: ${height}px; border-radius: 3px 3px 0 0; transition: all 0.2s;" title="${binStart} - ${binEnd}: ${freq}"></div>
-          </div>
-        `;
+        const barWidth = (100 - padding.left - padding.right) / binCount;
+        const barHeight = (freq / maxFreq) * (height - padding.top - padding.bottom);
+        const x = padding.left + i * barWidth;
+        const y = height - padding.bottom - barHeight;
+        
+        svg += `<rect x="${x}%" y="${y}" width="${barWidth}%" height="${barHeight}" 
+                  fill="url(#barGradient)" stroke="rgba(0,0,0,0.2)" stroke-width="1" opacity="0.9">
+                  <title>${(min + i * binWidth).toFixed(2)} - ${(min + (i + 1) * binWidth).toFixed(2)}: ${freq}</title>
+                </rect>`;
       });
       
-      chartHTML += '</div>';
-      chartHTML += `<div style="text-align: center; margin-top: 12px; color: var(--text-secondary);">
-        <strong>Range:</strong> ${min.toFixed(2)} to ${max.toFixed(2)} | 
-        <strong>Mean:</strong> ${(data.reduce((a,b) => a+b, 0) / data.length).toFixed(2)} |
-        <strong>N:</strong> ${data.length}
-      </div>`;
+      // Draw normal curve
+      if (showNormal && normalCurve.length > 0) {
+        let pathD = '';
+        normalCurve.forEach((point, i) => {
+          const x = padding.left + ((point.x - min) / (max - min)) * (100 - padding.left - padding.right);
+          const y = height - padding.bottom - (point.y / maxFreq) * (height - padding.top - padding.bottom);
+          pathD += `${i === 0 ? 'M' : 'L'} ${x}% ${y} `;
+        });
+        svg += `<path d="${pathD}" fill="none" stroke="#FFD700" stroke-width="3" stroke-dasharray="8,4" opacity="0.9"/>`;
+      }
       
-      document.getElementById(containerId).innerHTML = chartHTML;
+      // Gradient definition
+      svg = `<defs>
+        <linearGradient id="barGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:rgb(120,200,255);stop-opacity:1" />
+          <stop offset="100%" style="stop-color:rgb(255,165,120);stop-opacity:1" />
+        </linearGradient>
+      </defs>` + svg;
+      
+      // Axes labels
+      svg += `<text x="${padding.left / 2}%" y="${height / 2}" fill="var(--text-secondary)" font-size="12" text-anchor="middle" transform="rotate(-90, ${padding.left / 2}, ${height / 2})">Frequency</text>`;
+      svg += `<text x="50%" y="${height - 5}" fill="var(--text-secondary)" font-size="12" text-anchor="middle">${title}</text>`;
+      svg += `</svg>`;
+      
+      document.getElementById(containerId).innerHTML = svg;
     }
   </script>
 </body>
