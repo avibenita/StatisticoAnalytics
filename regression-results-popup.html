@@ -917,8 +917,8 @@
       // Calculate normal distribution curve points
       const normalCurve = [];
       if (showNormal) {
-        for (let i = 0; i <= binCount; i++) {
-          const x = min + (i / binCount) * (max - min);
+        for (let i = 0; i <= binCount * 2; i++) {
+          const x = min + (i / (binCount * 2)) * (max - min);
           const z = (x - stats.mean) / stats.sd;
           const y = (1 / (stats.sd * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * z * z);
           // Scale to match histogram (density * binWidth * totalCount)
@@ -926,49 +926,52 @@
         }
       }
       
-      // Create SVG histogram with normal curve
-      const maxFreq = Math.max(...bins, ...normalCurve.map(p => p.y));
-      const width = 100; // percentage
-      const height = 350;
+      // Create SVG histogram with normal curve using viewBox for proper scaling
+      const svgWidth = 800;
+      const svgHeight = 350;
       const padding = { top: 20, right: 20, bottom: 40, left: 50 };
+      const chartWidth = svgWidth - padding.left - padding.right;
+      const chartHeight = svgHeight - padding.top - padding.bottom;
       
-      let svg = `<svg width="100%" height="${height}" style="background: var(--surface-2); border-radius: 8px;">`;
+      const maxFreq = Math.max(...bins, ...(normalCurve.length > 0 ? normalCurve.map(p => p.y) : [0]));
+      
+      let svg = `<svg width="100%" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" style="background: var(--surface-2); border-radius: 8px;">`;
+      
+      // Gradient definition
+      svg += `<defs>
+        <linearGradient id="barGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:rgb(120,200,255);stop-opacity:1" />
+          <stop offset="100%" style="stop-color:rgb(255,165,120);stop-opacity:1" />
+        </linearGradient>
+      </defs>`;
       
       // Draw bars
       bins.forEach((freq, i) => {
-        const barWidth = (100 - padding.left - padding.right) / binCount;
-        const barHeight = (freq / maxFreq) * (height - padding.top - padding.bottom);
+        const barWidth = chartWidth / binCount;
+        const barHeight = maxFreq > 0 ? (freq / maxFreq) * chartHeight : 0;
         const x = padding.left + i * barWidth;
-        const y = height - padding.bottom - barHeight;
+        const y = svgHeight - padding.bottom - barHeight;
         
-        svg += `<rect x="${x}%" y="${y}" width="${barWidth}%" height="${barHeight}" 
+        svg += `<rect x="${x}" y="${y}" width="${barWidth - 1}" height="${barHeight}" 
                   fill="url(#barGradient)" stroke="rgba(0,0,0,0.2)" stroke-width="1" opacity="0.9">
                   <title>${(min + i * binWidth).toFixed(2)} - ${(min + (i + 1) * binWidth).toFixed(2)}: ${freq}</title>
                 </rect>`;
       });
       
       // Draw normal curve
-      if (showNormal && normalCurve.length > 0) {
+      if (showNormal && normalCurve.length > 0 && maxFreq > 0) {
         let pathD = '';
         normalCurve.forEach((point, i) => {
-          const x = padding.left + ((point.x - min) / (max - min)) * (100 - padding.left - padding.right);
-          const y = height - padding.bottom - (point.y / maxFreq) * (height - padding.top - padding.bottom);
-          pathD += `${i === 0 ? 'M' : 'L'} ${x}% ${y} `;
+          const x = padding.left + ((point.x - min) / (max - min)) * chartWidth;
+          const y = svgHeight - padding.bottom - (point.y / maxFreq) * chartHeight;
+          pathD += `${i === 0 ? 'M' : 'L'} ${x} ${y} `;
         });
         svg += `<path d="${pathD}" fill="none" stroke="#FFD700" stroke-width="3" stroke-dasharray="8,4" opacity="0.9"/>`;
       }
       
-      // Gradient definition
-      svg = `<defs>
-        <linearGradient id="barGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color:rgb(120,200,255);stop-opacity:1" />
-          <stop offset="100%" style="stop-color:rgb(255,165,120);stop-opacity:1" />
-        </linearGradient>
-      </defs>` + svg;
-      
       // Axes labels
-      svg += `<text x="${padding.left / 2}%" y="${height / 2}" fill="var(--text-secondary)" font-size="12" text-anchor="middle" transform="rotate(-90, ${padding.left / 2}, ${height / 2})">Frequency</text>`;
-      svg += `<text x="50%" y="${height - 5}" fill="var(--text-secondary)" font-size="12" text-anchor="middle">${title}</text>`;
+      svg += `<text x="${padding.left / 2}" y="${svgHeight / 2}" fill="var(--text-secondary)" font-size="12" text-anchor="middle" transform="rotate(-90, ${padding.left / 2}, ${svgHeight / 2})">Frequency</text>`;
+      svg += `<text x="${svgWidth / 2}" y="${svgHeight - 5}" fill="var(--text-secondary)" font-size="12" text-anchor="middle">${title}</text>`;
       svg += `</svg>`;
       
       document.getElementById(containerId).innerHTML = svg;
