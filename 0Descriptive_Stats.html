@@ -1000,20 +1000,26 @@
       }
     }
     
-    // Show different views (placeholder for future features)
+    // Show different views or switch to other analysis files
     function showView(viewName) {
       console.log('📊 View selected:', viewName);
-      // For now, just close dropdown
+      
+      // Close dropdown
       document.getElementById('navDropdown').classList.remove('open');
       
-      // Could implement different views here in the future
+      // Handle different views
       if (viewName === 'descriptive') {
-        // Already on descriptive stats
+        // Already on descriptive stats - do nothing
         return;
+      } else if (viewName === 'correlation') {
+        // Placeholder - correlation analysis coming soon
+        console.log('⚠️ Correlation Analysis not yet implemented');
+        // Could send message to parent to open correlation file when available
+        // Office.context.ui.messageParent('openCorrelation');
+      } else {
+        // Unknown view
+        console.log('⚠️ Unknown view:', viewName);
       }
-      
-      // Placeholder for future features
-      alert(`${viewName.charAt(0).toUpperCase() + viewName.slice(1)} feature coming soon!`);
     }
     
     // Global variables

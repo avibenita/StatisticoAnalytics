@@ -3508,10 +3508,22 @@
             
             // Listen for close message
             window.descriptiveDialog.addEventHandler(Office.EventType.DialogMessageReceived, function(arg) {
+              console.log('📨 Message from Descriptive Stats dialog:', arg.message);
+              
               if (arg.message === 'close') {
                 console.log('🚪 Closing descriptive dialog...');
                 window.descriptiveDialog.close();
                 window.descriptiveDialog = null;
+              } else if (arg.message === 'openRegression') {
+                console.log('🔄 Switching from Descriptive Stats to Regression Results...');
+                // Close descriptive dialog
+                window.descriptiveDialog.close();
+                window.descriptiveDialog = null;
+                
+                // Wait for dialog to close, then open regression results
+                setTimeout(function() {
+                  openResultsPopup();
+                }, 500);
               }
             });
             
